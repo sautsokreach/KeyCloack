@@ -1,0 +1,804 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Client Self Sign-Up Flows — Keycloak + Spring Boot</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Segoe UI', system-ui, sans-serif;
+    background: #0f1117;
+    color: #e2e8f0;
+    min-height: 100vh;
+    padding: 32px 20px;
+  }
+
+  h1 {
+    text-align: center;
+    font-size: 1.6rem;
+    font-weight: 700;
+    margin-bottom: 6px;
+    background: linear-gradient(90deg, #f59e0b, #ec4899);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .subtitle {
+    text-align: center;
+    color: #64748b;
+    font-size: 0.85rem;
+    margin-bottom: 48px;
+  }
+
+  .nav-link {
+    display: block;
+    text-align: center;
+    margin-bottom: 32px;
+    font-size: 0.78rem;
+  }
+  .nav-link a {
+    color: #60a5fa;
+    text-decoration: none;
+  }
+  .nav-link a:hover { text-decoration: underline; }
+
+  /* ── SECTION HEADERS ── */
+  .section { margin-bottom: 56px; }
+  .section-header {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    margin-bottom: 28px;
+  }
+  .section-badge {
+    font-size: 0.7rem;
+    font-weight: 700;
+    padding: 4px 14px;
+    border-radius: 20px;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    flex-shrink: 0;
+  }
+  .badge-easy   { background: rgba(20,184,166,0.2); color: #14b8a6; border: 1px solid rgba(20,184,166,0.4); }
+  .badge-custom { background: rgba(245,158,11,0.2); color: #f59e0b; border: 1px solid rgba(245,158,11,0.4); }
+
+  .section-title { font-size: 1.15rem; font-weight: 700; }
+  .section-desc  { color: #64748b; font-size: 0.8rem; margin-top: 3px; }
+
+  /* ── FLOW DIAGRAM ── */
+  .flow-wrap {
+    display: flex;
+    gap: 20px;
+    align-items: flex-start;
+    flex-wrap: wrap;
+  }
+
+  /* vertical step list */
+  .steps-col {
+    flex: 1;
+    min-width: 280px;
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+  }
+
+  .step-row {
+    display: flex;
+    align-items: flex-start;
+    gap: 0;
+  }
+
+  /* left timeline */
+  .timeline {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    flex-shrink: 0;
+    width: 36px;
+  }
+  .tl-dot {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.72rem;
+    font-weight: 700;
+    flex-shrink: 0;
+    z-index: 1;
+  }
+  .tl-line {
+    width: 2px;
+    flex: 1;
+    min-height: 24px;
+    background: #1e293b;
+  }
+
+  /* step content */
+  .step-content {
+    flex: 1;
+    padding: 0 0 24px 14px;
+  }
+  .step-actor {
+    font-size: 0.68rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.07em;
+    margin-bottom: 4px;
+  }
+  .step-text {
+    font-size: 0.82rem;
+    color: #e2e8f0;
+    font-weight: 600;
+    margin-bottom: 4px;
+  }
+  .step-sub {
+    font-size: 0.74rem;
+    color: #64748b;
+    line-height: 1.5;
+  }
+  .step-code {
+    margin-top: 8px;
+    background: #0a0e18;
+    border-radius: 8px;
+    padding: 10px 14px;
+    font-family: monospace;
+    font-size: 0.7rem;
+    color: #86efac;
+    line-height: 1.7;
+    overflow-x: auto;
+    border: 1px solid #1e293b;
+  }
+  .code-key   { color: #60a5fa; }
+  .code-val   { color: #86efac; }
+  .code-str   { color: #fbbf24; }
+  .code-url   { color: #f472b6; }
+  .code-comment { color: #475569; }
+
+  /* color themes per way */
+  .way-a .tl-dot { background: rgba(20,184,166,0.25); color: #14b8a6; border: 2px solid #14b8a6; }
+  .way-a .tl-line { background: linear-gradient(#14b8a650, #1e293b); }
+  .way-a .step-actor { color: #14b8a6; }
+
+  .way-b .tl-dot { background: rgba(245,158,11,0.25); color: #f59e0b; border: 2px solid #f59e0b; }
+  .way-b .tl-line { background: linear-gradient(#f59e0b50, #1e293b); }
+  .way-b .step-actor { color: #f59e0b; }
+
+  /* ── ACTOR NODES (right side) ── */
+  .actors-col {
+    width: 200px;
+    flex-shrink: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    padding-top: 4px;
+  }
+
+  .actor-node {
+    border-radius: 12px;
+    padding: 12px 16px;
+    text-align: center;
+    border: 2px solid;
+  }
+  .actor-browser  { background: rgba(51,65,85,0.4);  border-color: #475569; }
+  .actor-spring   { background: rgba(5,46,22,0.5);   border-color: #16a34a; }
+  .actor-keycloak { background: rgba(30,27,75,0.5);  border-color: #6366f1; }
+  .actor-google   { background: rgba(234,88,12,0.15);border-color: #f97316; }
+
+  .actor-icon  { font-size: 1.4rem; margin-bottom: 4px; }
+  .actor-name  { font-size: 0.78rem; font-weight: 700; }
+  .actor-port  { font-size: 0.65rem; color: #64748b; font-family: monospace; margin-top: 2px; }
+
+  /* ── COMPARISON TABLE ── */
+  .compare-table {
+    width: 100%;
+    max-width: 700px;
+    margin: 0 auto 48px;
+    border-collapse: collapse;
+    font-size: 0.8rem;
+  }
+  .compare-table th {
+    padding: 12px 16px;
+    text-align: left;
+    font-size: 0.72rem;
+    text-transform: uppercase;
+    letter-spacing: 0.07em;
+    color: #64748b;
+    border-bottom: 2px solid #1e293b;
+  }
+  .compare-table td {
+    padding: 12px 16px;
+    border-bottom: 1px solid #1e293b;
+    vertical-align: top;
+  }
+  .compare-table tr:last-child td { border-bottom: none; }
+  .compare-table tr:hover td { background: rgba(255,255,255,0.02); }
+
+  .col-feature { color: #94a3b8; width: 35%; }
+  .col-a { color: #14b8a6; width: 30%; }
+  .col-b { color: #f59e0b; width: 30%; }
+
+  .check { color: #22c55e; }
+  .cross { color: #ef4444; }
+
+  /* ── COMBINED FULL FLOW ── */
+  .full-flow {
+    max-width: 860px;
+    margin: 0 auto 56px;
+    background: #1e293b;
+    border-radius: 16px;
+    padding: 28px;
+  }
+  .full-flow h2 {
+    font-size: 0.9rem;
+    font-weight: 700;
+    color: #94a3b8;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    margin-bottom: 24px;
+    text-align: center;
+  }
+
+  .ff-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 10px;
+    flex-wrap: wrap;
+    row-gap: 8px;
+  }
+
+  .ff-node {
+    border-radius: 10px;
+    padding: 8px 14px;
+    font-size: 0.78rem;
+    font-weight: 600;
+    white-space: nowrap;
+    border: 1px solid;
+  }
+  .ff-browser  { background: rgba(51,65,85,0.5);  border-color: #475569; color: #e2e8f0; }
+  .ff-spring   { background: rgba(5,46,22,0.5);   border-color: #16a34a; color: #4ade80; }
+  .ff-keycloak { background: rgba(30,27,75,0.5);  border-color: #6366f1; color: #818cf8; }
+
+  .ff-arrow {
+    color: #475569;
+    font-size: 0.8rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+    flex-shrink: 0;
+  }
+  .ff-arrow-label {
+    font-size: 0.62rem;
+    color: #475569;
+    text-align: center;
+    max-width: 100px;
+    line-height: 1.3;
+    font-family: monospace;
+  }
+
+  .ff-divider {
+    border: none;
+    border-top: 1px dashed #334155;
+    margin: 16px 0;
+  }
+  .ff-phase {
+    font-size: 0.68rem;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: #475569;
+    margin-bottom: 12px;
+  }
+
+  /* ── KEYCLOAK TOGGLE GUIDE ── */
+  .guide-box {
+    max-width: 600px;
+    margin: 0 auto 48px;
+    background: rgba(99,102,241,0.08);
+    border: 1px solid rgba(99,102,241,0.25);
+    border-radius: 14px;
+    padding: 24px;
+  }
+  .guide-box h3 {
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: #818cf8;
+    margin-bottom: 16px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .guide-step {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 12px;
+    align-items: flex-start;
+  }
+  .guide-num {
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    background: rgba(99,102,241,0.3);
+    color: #818cf8;
+    font-size: 0.7rem;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    margin-top: 1px;
+  }
+  .guide-text { font-size: 0.8rem; color: #94a3b8; line-height: 1.5; }
+  .guide-text strong { color: #e2e8f0; }
+  .guide-path {
+    display: inline-block;
+    background: #0f1117;
+    border-radius: 6px;
+    padding: 2px 8px;
+    font-family: monospace;
+    font-size: 0.7rem;
+    color: #f59e0b;
+    margin-top: 4px;
+  }
+
+  footer {
+    text-align: center;
+    color: #334155;
+    font-size: 0.72rem;
+    margin-top: 20px;
+  }
+</style>
+</head>
+<body>
+
+<h1>Client Self Sign-Up</h1>
+<p class="subtitle">Two ways a user can register themselves — no admin needed</p>
+<div class="nav-link"><a href="/diagram.html">← Back to Architecture Diagram</a></div>
+
+<!-- ══════════════════════════════════════════════
+     WAY A — Keycloak built-in
+══════════════════════════════════════════════ -->
+<div class="section">
+  <div class="section-header">
+    <span class="section-badge badge-easy">Way A — Zero Code</span>
+    <div>
+      <div class="section-title">Keycloak Built-in Registration Page</div>
+      <div class="section-desc">Enable one toggle. Keycloak shows its own register form. No Spring Boot code needed.</div>
+    </div>
+  </div>
+
+  <div class="flow-wrap">
+    <!-- steps -->
+    <div class="steps-col way-a">
+
+      <div class="step-row">
+        <div class="timeline">
+          <div class="tl-dot">1</div>
+          <div class="tl-line"></div>
+        </div>
+        <div class="step-content">
+          <div class="step-actor">Browser</div>
+          <div class="step-text">Visits your app or Keycloak login page</div>
+          <div class="step-code">GET http://52.65.212.193:8080
+<span class="code-comment">→ Spring redirects to Keycloak login page</span></div>
+        </div>
+      </div>
+
+      <div class="step-row">
+        <div class="timeline">
+          <div class="tl-dot">2</div>
+          <div class="tl-line"></div>
+        </div>
+        <div class="step-content">
+          <div class="step-actor">Keycloak</div>
+          <div class="step-text">Shows login page with "Register" link</div>
+          <div class="step-sub">User clicks "Register" — goes to Keycloak's own registration form</div>
+        </div>
+      </div>
+
+      <div class="step-row">
+        <div class="timeline">
+          <div class="tl-dot">3</div>
+          <div class="tl-line"></div>
+        </div>
+        <div class="step-content">
+          <div class="step-actor">User</div>
+          <div class="step-text">Fills in Keycloak's registration form</div>
+          <div class="step-code">First name : Alice
+Last name  : Smith
+Email      : alice@example.com
+Username   : alice
+Password   : ••••••••
+Confirm pw : ••••••••</div>
+        </div>
+      </div>
+
+      <div class="step-row">
+        <div class="timeline">
+          <div class="tl-dot">4</div>
+          <div class="tl-line"></div>
+        </div>
+        <div class="step-content">
+          <div class="step-actor">Keycloak</div>
+          <div class="step-text">Creates user in its own database</div>
+          <div class="step-sub">Hashes password, assigns default role, optionally sends verification email</div>
+        </div>
+      </div>
+
+      <div class="step-row">
+        <div class="timeline">
+          <div class="tl-dot">5</div>
+          <div class="tl-line"></div>
+        </div>
+        <div class="step-content">
+          <div class="step-actor">Keycloak</div>
+          <div class="step-text">Auto-logs in → issues JWT token</div>
+          <div class="step-code">{
+  <span class="code-key">"access_token"</span>: <span class="code-str">"eyJhbG..."</span>,
+  <span class="code-key">"token_type"</span>:   <span class="code-str">"Bearer"</span>,
+  <span class="code-key">"expires_in"</span>:   <span class="code-val">300</span>
+}</div>
+        </div>
+      </div>
+
+      <div class="step-row">
+        <div class="timeline">
+          <div class="tl-dot">6</div>
+        </div>
+        <div class="step-content">
+          <div class="step-actor">Browser → Spring Boot</div>
+          <div class="step-text">Redirected back to app, now logged in</div>
+          <div class="step-code">GET :8080/api/user/me
+Authorization: Bearer eyJhbG...
+<span class="code-comment">→ 200 OK  (Spring validates JWT locally)</span></div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- actors -->
+    <div class="actors-col">
+      <div class="actor-node actor-browser">
+        <div class="actor-icon">🌐</div>
+        <div class="actor-name">Browser</div>
+        <div class="actor-port">User's device</div>
+      </div>
+      <div class="actor-node actor-keycloak">
+        <div class="actor-icon">🔑</div>
+        <div class="actor-name">Keycloak</div>
+        <div class="actor-port">:8180</div>
+      </div>
+      <div class="actor-node actor-spring">
+        <div class="actor-icon">🍃</div>
+        <div class="actor-name">Spring Boot</div>
+        <div class="actor-port">:8080</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ── enable guide ── -->
+<div class="guide-box">
+  <h3>🔧 How to enable self-registration in Keycloak</h3>
+  <div class="guide-step">
+    <div class="guide-num">1</div>
+    <div class="guide-text">Open Keycloak Admin UI at <strong>http://52.65.212.193:8180</strong></div>
+  </div>
+  <div class="guide-step">
+    <div class="guide-num">2</div>
+    <div class="guide-text">Go to <strong>Realm Settings → Login</strong> tab<br/>
+      <span class="guide-path">Realm Settings → Login → User registration → ON</span>
+    </div>
+  </div>
+  <div class="guide-step">
+    <div class="guide-num">3</div>
+    <div class="guide-text">Optional extras on the same tab:<br/>
+      <span class="guide-path">Email as username → ON</span><br/>
+      <span class="guide-path">Verify email → ON</span><br/>
+      <span class="guide-path">Remember me → ON</span>
+    </div>
+  </div>
+  <div class="guide-step">
+    <div class="guide-num">4</div>
+    <div class="guide-text">Set default role for new users:<br/>
+      <span class="guide-path">Realm Settings → User Registration → Default roles → add USER</span>
+    </div>
+  </div>
+</div>
+
+
+<!-- ══════════════════════════════════════════════
+     WAY B — Custom form via Spring Boot
+══════════════════════════════════════════════ -->
+<div class="section">
+  <div class="section-header">
+    <span class="section-badge badge-custom">Way B — Custom Form</span>
+    <div>
+      <div class="section-title">Your Own Registration Form → Spring Boot → Keycloak Admin API</div>
+      <div class="section-desc">Full control over UI. Spring Boot calls Keycloak's Admin REST API to create the user.</div>
+    </div>
+  </div>
+
+  <div class="flow-wrap">
+    <!-- steps -->
+    <div class="steps-col way-b">
+
+      <div class="step-row">
+        <div class="timeline">
+          <div class="tl-dot">1</div>
+          <div class="tl-line"></div>
+        </div>
+        <div class="step-content">
+          <div class="step-actor">Browser / React App</div>
+          <div class="step-text">User fills YOUR custom registration form</div>
+          <div class="step-sub">Your design, your fields — anything you need</div>
+          <div class="step-code">Name     : Alice Smith
+Email    : alice@example.com
+Phone    : +61 400 123 456   <span class="code-comment">← custom field</span>
+Password : ••••••••</div>
+        </div>
+      </div>
+
+      <div class="step-row">
+        <div class="timeline">
+          <div class="tl-dot">2</div>
+          <div class="tl-line"></div>
+        </div>
+        <div class="step-content">
+          <div class="step-actor">Frontend → Spring Boot</div>
+          <div class="step-text">POST to your registration endpoint</div>
+          <div class="step-code">POST :8080/api/auth/register
+Content-Type: application/json
+
+{
+  <span class="code-key">"username"</span>: <span class="code-str">"alice"</span>,
+  <span class="code-key">"email"</span>:    <span class="code-str">"alice@example.com"</span>,
+  <span class="code-key">"password"</span>: <span class="code-str">"secret123"</span>
+}</div>
+        </div>
+      </div>
+
+      <div class="step-row">
+        <div class="timeline">
+          <div class="tl-dot">3</div>
+          <div class="tl-line"></div>
+        </div>
+        <div class="step-content">
+          <div class="step-actor">Spring Boot → Keycloak Admin API</div>
+          <div class="step-text">Creates user via Keycloak Admin REST API</div>
+          <div class="step-sub">Spring Boot must first get an admin token, then call the users API</div>
+          <div class="step-code">POST :8180/admin/realms/demo-realm/users
+Authorization: Bearer &lt;admin-token&gt;
+
+{
+  <span class="code-key">"username"</span>:  <span class="code-str">"alice"</span>,
+  <span class="code-key">"email"</span>:     <span class="code-str">"alice@example.com"</span>,
+  <span class="code-key">"enabled"</span>:   <span class="code-val">true</span>,
+  <span class="code-key">"credentials"</span>: [{
+    <span class="code-key">"type"</span>:      <span class="code-str">"password"</span>,
+    <span class="code-key">"value"</span>:     <span class="code-str">"secret123"</span>,
+    <span class="code-key">"temporary"</span>: <span class="code-val">false</span>
+  }]
+}</div>
+        </div>
+      </div>
+
+      <div class="step-row">
+        <div class="timeline">
+          <div class="tl-dot">4</div>
+          <div class="tl-line"></div>
+        </div>
+        <div class="step-content">
+          <div class="step-actor">Spring Boot → Keycloak Admin API</div>
+          <div class="step-text">Assigns USER role to the new user</div>
+          <div class="step-code">POST :8180/admin/realms/demo-realm
+       /users/{userId}/role-mappings/realm
+
+[{ <span class="code-key">"name"</span>: <span class="code-str">"USER"</span> }]
+
+<span class="code-comment">→ 204 No Content (role assigned)</span></div>
+        </div>
+      </div>
+
+      <div class="step-row">
+        <div class="timeline">
+          <div class="tl-dot">5</div>
+          <div class="tl-line"></div>
+        </div>
+        <div class="step-content">
+          <div class="step-actor">Spring Boot → Frontend</div>
+          <div class="step-text">Returns success to frontend</div>
+          <div class="step-code">HTTP 201 Created
+{ <span class="code-key">"message"</span>: <span class="code-str">"Registration successful"</span> }</div>
+        </div>
+      </div>
+
+      <div class="step-row">
+        <div class="timeline">
+          <div class="tl-dot">6</div>
+          <div class="tl-line"></div>
+        </div>
+        <div class="step-content">
+          <div class="step-actor">Frontend → Keycloak</div>
+          <div class="step-text">Auto-login: fetch JWT token</div>
+          <div class="step-code">POST :8180/realms/demo-realm
+     /protocol/openid-connect/token
+
+grant_type=password
+username=alice
+password=secret123
+client_id=spring-demo-client</div>
+        </div>
+      </div>
+
+      <div class="step-row">
+        <div class="timeline">
+          <div class="tl-dot">7</div>
+        </div>
+        <div class="step-content">
+          <div class="step-actor">Frontend → Spring Boot</div>
+          <div class="step-text">Calls API with JWT — user is in</div>
+          <div class="step-code">GET :8080/api/user/me
+Authorization: Bearer eyJhbG...
+<span class="code-comment">→ 200 OK</span></div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- actors -->
+    <div class="actors-col">
+      <div class="actor-node actor-browser">
+        <div class="actor-icon">🌐</div>
+        <div class="actor-name">Browser / React</div>
+        <div class="actor-port">Your custom UI</div>
+      </div>
+      <div class="actor-node actor-spring">
+        <div class="actor-icon">🍃</div>
+        <div class="actor-name">Spring Boot</div>
+        <div class="actor-port">:8080</div>
+      </div>
+      <div class="actor-node actor-keycloak">
+        <div class="actor-icon">🔑</div>
+        <div class="actor-name">Keycloak</div>
+        <div class="actor-port">:8180 Admin API</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<!-- ══════════════════════════════════════════════
+     COMPARISON TABLE
+══════════════════════════════════════════════ -->
+<div style="margin-bottom:56px;">
+  <h2 style="text-align:center;font-size:1rem;font-weight:600;color:#94a3b8;text-transform:uppercase;letter-spacing:0.08em;margin-bottom:20px;">
+    Way A vs Way B
+  </h2>
+  <table class="compare-table">
+    <thead>
+      <tr>
+        <th class="col-feature"></th>
+        <th class="col-a">Way A — Keycloak built-in</th>
+        <th class="col-b">Way B — Custom form</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td class="col-feature">Code needed</td>
+        <td><span class="check">✅</span> Zero</td>
+        <td>~50 lines in Spring Boot</td>
+      </tr>
+      <tr>
+        <td class="col-feature">Custom UI / branding</td>
+        <td><span class="cross">❌</span> Keycloak's UI</td>
+        <td><span class="check">✅</span> Fully yours</td>
+      </tr>
+      <tr>
+        <td class="col-feature">Extra fields (phone, DOB)</td>
+        <td><span class="cross">❌</span> Hard to add</td>
+        <td><span class="check">✅</span> Easy</td>
+      </tr>
+      <tr>
+        <td class="col-feature">Email verification</td>
+        <td><span class="check">✅</span> Built-in toggle</td>
+        <td><span class="check">✅</span> Keycloak handles it</td>
+      </tr>
+      <tr>
+        <td class="col-feature">Password rules</td>
+        <td><span class="check">✅</span> Configure in Keycloak</td>
+        <td><span class="check">✅</span> You control</td>
+      </tr>
+      <tr>
+        <td class="col-feature">Who stores password</td>
+        <td>Keycloak</td>
+        <td>Keycloak (Spring never stores it)</td>
+      </tr>
+      <tr>
+        <td class="col-feature">Time to ship</td>
+        <td><span class="check">✅</span> Minutes</td>
+        <td>Hours</td>
+      </tr>
+      <tr>
+        <td class="col-feature">Best for</td>
+        <td>Internal tools, quick demos</td>
+        <td>Customer-facing products</td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
+
+<!-- ══════════════════════════════════════════════
+     FULL PICTURE (register → login → use API)
+══════════════════════════════════════════════ -->
+<div class="full-flow">
+  <h2>Complete Journey: Register → Login → Use API</h2>
+
+  <div class="ff-phase">① Register (once)</div>
+  <div class="ff-row">
+    <div class="ff-node ff-browser">🌐 Browser / App</div>
+    <div class="ff-arrow">
+      <div class="ff-arrow-label">username + password</div>
+      ──────►
+    </div>
+    <div class="ff-node ff-keycloak">🔑 Keycloak<br/><small style="font-size:0.65rem;opacity:0.7">(or via Spring)</small></div>
+    <div class="ff-arrow">
+      <div class="ff-arrow-label">user created in Keycloak DB</div>
+      ──────►
+    </div>
+    <div class="ff-node ff-keycloak" style="opacity:0.6">🗄️ Keycloak DB</div>
+  </div>
+
+  <hr class="ff-divider"/>
+
+  <div class="ff-phase">② Login (get token)</div>
+  <div class="ff-row">
+    <div class="ff-node ff-browser">🌐 Browser / App</div>
+    <div class="ff-arrow">
+      <div class="ff-arrow-label">POST /token<br/>username+password</div>
+      ──────►
+    </div>
+    <div class="ff-node ff-keycloak">🔑 Keycloak :8180</div>
+    <div class="ff-arrow">
+      <div class="ff-arrow-label">JWT token returned</div>
+      ◄──────
+    </div>
+    <div class="ff-node ff-browser">🌐 stores JWT</div>
+  </div>
+
+  <hr class="ff-divider"/>
+
+  <div class="ff-phase">③ Use API (every request)</div>
+  <div class="ff-row">
+    <div class="ff-node ff-browser">🌐 Browser / App</div>
+    <div class="ff-arrow">
+      <div class="ff-arrow-label">Bearer JWT</div>
+      ──────►
+    </div>
+    <div class="ff-node ff-spring">🍃 Spring Boot :8080</div>
+    <div class="ff-arrow">
+      <div class="ff-arrow-label">validate locally<br/>(no Keycloak call)</div>
+      ──────►
+    </div>
+    <div class="ff-node ff-spring" style="opacity:0.7">✅ 200 OK<br/>business logic</div>
+  </div>
+
+  <hr class="ff-divider"/>
+
+  <div style="text-align:center;font-size:0.75rem;color:#475569;margin-top:4px;">
+    Keycloak is only called during <strong style="color:#818cf8">Register</strong> and <strong style="color:#818cf8">Login</strong>.
+    Every API call after that is <strong style="color:#4ade80">Spring Boot only</strong>.
+  </div>
+</div>
+
+<div class="nav-link"><a href="/diagram.html">← Back to Architecture Diagram</a></div>
+
+<footer>keycloak-spring-demo &nbsp;·&nbsp; signup-diagram.html &nbsp;·&nbsp; generated 2026-05-28</footer>
+</body>
+</html>

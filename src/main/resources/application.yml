@@ -1,0 +1,41 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: keycloak-spring-demo
+
+  security:
+    oauth2:
+      # --- Resource Server: validates JWT tokens on API calls ---
+      resourceserver:
+        jwt:
+          # Replace <EC2_PUBLIC_IP> with your EC2 public IP or domain
+          issuer-uri: http://52.65.212.193:8180/realms/demo-realm
+          jwk-set-uri: http://52.65.212.193:8180/realms/demo-realm/protocol/openid-connect/certs
+
+      # --- OAuth2 Client: browser-based login redirect flow ---
+      client:
+        registration:
+          keycloak:
+            client-id: spring-demo-client
+            client-secret: super-secret-client-key
+            scope: openid, profile, email, roles
+            authorization-grant-type: authorization_code
+            redirect-uri: "http://52.65.212.193:8080/login/oauth2/code/keycloak"
+        provider:
+          keycloak:
+            issuer-uri: http://52.65.212.193:8180/realms/demo-realm
+            user-name-attribute: preferred_username
+
+# App-level config
+app:
+  keycloak:
+    realm: demo-realm
+    server-url: http://52.65.212.193:8180
+    client-id: spring-demo-client
+
+logging:
+  level:
+    org.springframework.security: DEBUG
+    com.demo.keycloak: DEBUG

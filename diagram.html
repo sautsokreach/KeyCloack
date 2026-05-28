@@ -1,0 +1,1308 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Keycloak + Spring Boot — Login &amp; Register Flows</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: 'Segoe UI', system-ui, sans-serif;
+  background: #0f1117;
+  color: #e2e8f0;
+  min-height: 100vh;
+  padding: 32px 20px 60px;
+}
+
+h1 {
+  text-align: center;
+  font-size: 1.7rem;
+  font-weight: 800;
+  margin-bottom: 6px;
+  background: linear-gradient(90deg, #60a5fa, #a78bfa, #34d399);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.subtitle {
+  text-align: center;
+  color: #64748b;
+  font-size: 0.85rem;
+  margin-bottom: 36px;
+}
+
+/* ── TABS ── */
+.tabs {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+  margin-bottom: 32px;
+  flex-wrap: wrap;
+}
+.tab-btn {
+  padding: 9px 22px;
+  border-radius: 999px;
+  border: 2px solid #334155;
+  background: transparent;
+  color: #94a3b8;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-family: inherit;
+}
+.tab-btn:hover { border-color: #64748b; color: #e2e8f0; }
+.tab-btn.active {
+  background: #1e40af;
+  border-color: #3b82f6;
+  color: #fff;
+}
+.tab-btn.active-purple { background: #5b21b6; border-color: #8b5cf6; color: #fff; }
+.tab-btn.active-green  { background: #065f46; border-color: #10b981; color: #fff; }
+.tab-btn.active-orange { background: #92400e; border-color: #f59e0b; color: #fff; }
+
+.tab-panel { display: none; }
+.tab-panel.active { display: block; }
+
+/* ── ACTORS ── */
+.actors {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 12px;
+  max-width: 860px;
+  margin: 0 auto 28px;
+}
+.actor-card {
+  border-radius: 14px;
+  padding: 16px 20px;
+  text-align: center;
+  border: 2px solid;
+}
+.actor-browser { background: #1e293b; border-color: #475569; }
+.actor-spring  { background: #052e16; border-color: #16a34a; }
+.actor-keycloak { background: #1e1b4b; border-color: #6366f1; }
+
+.actor-icon { font-size: 1.8rem; margin-bottom: 4px; }
+.actor-name { font-weight: 700; font-size: 0.9rem; }
+.actor-port {
+  display: inline-block;
+  margin-top: 6px;
+  background: rgba(255,255,255,0.07);
+  border-radius: 6px;
+  padding: 2px 10px;
+  font-size: 0.72rem;
+  font-family: monospace;
+}
+
+/* ── SEQUENCE DIAGRAM ── */
+.sequence {
+  max-width: 860px;
+  margin: 0 auto;
+  position: relative;
+}
+
+/* vertical lifelines */
+.sequence::before {
+  content: '';
+  position: absolute;
+  top: 0; bottom: 0;
+  left: calc(16.66% - 1px);
+  width: 2px;
+  background: repeating-linear-gradient(to bottom, #334155 0, #334155 6px, transparent 6px, transparent 12px);
+  pointer-events: none;
+}
+.sequence::after {
+  content: '';
+  position: absolute;
+  top: 0; bottom: 0;
+  left: calc(50% - 1px);
+  width: 2px;
+  background: repeating-linear-gradient(to bottom, #1d4ed8 0, #1d4ed8 6px, transparent 6px, transparent 12px);
+  pointer-events: none;
+}
+.lifeline-keycloak {
+  position: absolute;
+  top: 0; bottom: 0;
+  right: calc(16.66% - 1px);
+  width: 2px;
+  background: repeating-linear-gradient(to bottom, #4338ca 0, #4338ca 6px, transparent 6px, transparent 12px);
+  pointer-events: none;
+}
+
+.step {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 10px 0;
+  position: relative;
+}
+
+.step-num {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  font-size: 0.72rem;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  z-index: 1;
+}
+
+.step-body {
+  flex: 1;
+  background: #1e293b;
+  border-radius: 10px;
+  padding: 12px 14px;
+  border-left: 3px solid;
+}
+
+.step-header {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 5px;
+}
+
+.from-badge, .to-badge {
+  padding: 2px 10px;
+  border-radius: 20px;
+  font-size: 0.68rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.badge-browser  { background: rgba(71,85,105,0.4);  color: #94a3b8; border: 1px solid #475569; }
+.badge-spring   { background: rgba(22,163,74,0.2);  color: #4ade80; border: 1px solid #16a34a; }
+.badge-keycloak { background: rgba(99,102,241,0.2); color: #818cf8; border: 1px solid #6366f1; }
+.badge-user     { background: rgba(251,191,36,0.15); color: #fbbf24; border: 1px solid #92400e; }
+
+.arrow-icon { font-size: 0.75rem; color: #64748b; }
+
+.step-action {
+  font-family: monospace;
+  font-size: 0.78rem;
+  color: #e2e8f0;
+}
+.step-action .method { color: #4ade80; font-weight: 700; }
+.step-action .url    { color: #60a5fa; }
+.step-action .code   { color: #f59e0b; }
+.step-action .redirect { color: #a78bfa; }
+
+.step-desc {
+  font-size: 0.78rem;
+  color: #94a3b8;
+  margin-top: 4px;
+  line-height: 1.5;
+}
+
+.step-snippet {
+  margin-top: 8px;
+  background: #0f1117;
+  border-radius: 8px;
+  padding: 8px 12px;
+  font-family: monospace;
+  font-size: 0.7rem;
+  color: #86efac;
+  line-height: 1.6;
+  overflow-x: auto;
+  white-space: pre;
+}
+.step-snippet .dim   { color: #475569; }
+.step-snippet .blue  { color: #60a5fa; }
+.step-snippet .orange{ color: #f59e0b; }
+.step-snippet .purple{ color: #c084fc; }
+
+/* step colour themes */
+.step-blue   .step-num { background: #1d4ed8; color: #fff; }
+.step-blue   .step-body { border-color: #3b82f6; }
+.step-purple .step-num { background: #6d28d9; color: #fff; }
+.step-purple .step-body { border-color: #8b5cf6; }
+.step-green  .step-num { background: #15803d; color: #fff; }
+.step-green  .step-body { border-color: #22c55e; }
+.step-orange .step-num { background: #b45309; color: #fff; }
+.step-orange .step-body { border-color: #f59e0b; }
+.step-teal   .step-num { background: #0f766e; color: #fff; }
+.step-teal   .step-body { border-color: #14b8a6; }
+.step-pink   .step-num { background: #9d174d; color: #fff; }
+.step-pink   .step-body { border-color: #ec4899; }
+.step-red    .step-num { background: #b91c1c; color: #fff; }
+.step-red    .step-body { border-color: #ef4444; }
+
+/* ── NOTE BOX ── */
+.note-box {
+  max-width: 860px;
+  margin: 20px auto 0;
+  background: #172554;
+  border: 1px solid #1d4ed8;
+  border-radius: 10px;
+  padding: 14px 18px;
+  font-size: 0.8rem;
+  color: #93c5fd;
+  line-height: 1.6;
+}
+.note-box strong { color: #bfdbfe; }
+
+.note-box-orange {
+  background: #1c1008;
+  border-color: #92400e;
+  color: #fcd34d;
+}
+.note-box-orange strong { color: #fef3c7; }
+
+/* ── DIVIDER ── */
+.section-divider {
+  max-width: 860px;
+  margin: 32px auto 24px;
+  border: none;
+  border-top: 1px solid #1e293b;
+}
+
+/* ── ENDPOINT TABLE ── */
+.endpoint-section {
+  max-width: 860px;
+  margin: 40px auto 0;
+}
+.endpoint-section h2 {
+  font-size: 1rem;
+  font-weight: 700;
+  color: #94a3b8;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin-bottom: 18px;
+  text-align: center;
+}
+.endpoint-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.8rem;
+}
+.endpoint-table thead tr {
+  background: #1e293b;
+}
+.endpoint-table th {
+  padding: 10px 14px;
+  text-align: left;
+  color: #64748b;
+  font-weight: 600;
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+.endpoint-table td {
+  padding: 10px 14px;
+  border-top: 1px solid #1e293b;
+  vertical-align: top;
+}
+.endpoint-table tr:hover td { background: rgba(255,255,255,0.02); }
+.method-get  { color: #4ade80; font-weight: 700; font-family: monospace; }
+.method-post { color: #fb923c; font-weight: 700; font-family: monospace; }
+.path-col    { font-family: monospace; color: #93c5fd; }
+.auth-public { color: #14b8a6; }
+.auth-user   { color: #22c55e; }
+.auth-admin  { color: #ef4444; }
+.auth-keycloak { color: #818cf8; }
+
+/* ── ROLE FLOW ── */
+.role-section {
+  max-width: 860px;
+  margin: 40px auto 0;
+}
+.role-section h2 {
+  font-size: 1rem;
+  font-weight: 700;
+  color: #94a3b8;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin-bottom: 18px;
+  text-align: center;
+}
+.role-flow {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0;
+  flex-wrap: wrap;
+  row-gap: 16px;
+}
+.role-box {
+  background: #1e293b;
+  border-radius: 12px;
+  padding: 16px 20px;
+  min-width: 160px;
+  text-align: center;
+}
+.role-box-title {
+  font-size: 0.68rem;
+  color: #64748b;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin-bottom: 10px;
+}
+.role-chip {
+  display: inline-block;
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  margin: 3px;
+  font-family: monospace;
+}
+.chip-kc { background: rgba(99,102,241,0.2); color: #818cf8; border: 1px solid rgba(99,102,241,0.4); }
+.chip-sp { background: rgba(34,197,94,0.2);  color: #4ade80; border: 1px solid rgba(34,197,94,0.4); }
+.role-arrow {
+  width: 50px;
+  height: 2px;
+  background: #334155;
+  position: relative;
+  flex-shrink: 0;
+  margin: 0 4px;
+}
+.role-arrow::after {
+  content: '▶';
+  color: #475569;
+  position: absolute;
+  right: -10px;
+  top: -7px;
+  font-size: 10px;
+}
+
+footer {
+  text-align: center;
+  color: #334155;
+  font-size: 0.72rem;
+  margin-top: 48px;
+}
+</style>
+</head>
+<body>
+
+<h1>Keycloak + Spring Boot</h1>
+<p class="subtitle">Login &amp; Register Process Diagrams — based on actual source code</p>
+
+<!-- ── TABS ── -->
+<div class="tabs">
+  <button class="tab-btn active" onclick="switchTab('browser', this, '')">🌐 Browser Login (OIDC)</button>
+  <button class="tab-btn" onclick="switchTab('api', this, '-purple')">🔌 API Login (JWT)</button>
+  <button class="tab-btn" onclick="switchTab('register', this, '-green')">📝 Register</button>
+  <button class="tab-btn" onclick="switchTab('logout', this, '-orange')">🚪 Logout</button>
+</div>
+
+<!-- ════════════════════════════════════════════════
+     TAB 1: BROWSER LOGIN (OAuth2 Authorization Code + OIDC)
+     ════════════════════════════════════════════════ -->
+<div id="tab-browser" class="tab-panel active">
+
+  <div class="actors">
+    <div class="actor-card actor-browser">
+      <div class="actor-icon">🌐</div>
+      <div class="actor-name">Browser</div>
+      <div class="actor-port">User's web browser</div>
+    </div>
+    <div class="actor-card actor-spring">
+      <div class="actor-icon">🍃</div>
+      <div class="actor-name">Spring Boot</div>
+      <div class="actor-port">:8080  (browserFilterChain)</div>
+    </div>
+    <div class="actor-card actor-keycloak">
+      <div class="actor-icon">🔑</div>
+      <div class="actor-name">Keycloak</div>
+      <div class="actor-port">:8180  realm: demo-realm</div>
+    </div>
+  </div>
+
+  <div class="sequence">
+    <div class="lifeline-keycloak"></div>
+
+    <!-- Step 1 -->
+    <div class="step step-blue">
+      <div class="step-num">1</div>
+      <div class="step-body">
+        <div class="step-header">
+          <span class="from-badge badge-browser">Browser</span>
+          <span class="arrow-icon">→</span>
+          <span class="to-badge badge-spring">Spring Boot</span>
+        </div>
+        <div class="step-action"><span class="method">GET</span> <span class="url">http://52.65.212.193:8080/</span></div>
+        <div class="step-desc">User visits any protected page. No session cookie → Spring sees unauthenticated request.</div>
+      </div>
+    </div>
+
+    <!-- Step 2 -->
+    <div class="step step-purple">
+      <div class="step-num">2</div>
+      <div class="step-body">
+        <div class="step-header">
+          <span class="from-badge badge-spring">Spring Boot</span>
+          <span class="arrow-icon">→</span>
+          <span class="to-badge badge-browser">Browser</span>
+        </div>
+        <div class="step-action"><span class="redirect">302 Redirect → /oauth2/authorization/keycloak</span></div>
+        <div class="step-desc"><code>browserFilterChain</code> (Order 2) detects no authentication. Configured <code>.loginPage("/oauth2/authorization/keycloak")</code> skips Spring's own login page and goes straight to Keycloak.</div>
+      </div>
+    </div>
+
+    <!-- Step 3 -->
+    <div class="step step-blue">
+      <div class="step-num">3</div>
+      <div class="step-body">
+        <div class="step-header">
+          <span class="from-badge badge-browser">Browser</span>
+          <span class="arrow-icon">→</span>
+          <span class="to-badge badge-spring">Spring Boot</span>
+        </div>
+        <div class="step-action"><span class="method">GET</span> <span class="url">/oauth2/authorization/keycloak</span></div>
+        <div class="step-desc">Spring's OAuth2 client builds the authorization URL using <code>application.yml</code> settings.</div>
+      </div>
+    </div>
+
+    <!-- Step 4 -->
+    <div class="step step-purple">
+      <div class="step-num">4</div>
+      <div class="step-body">
+        <div class="step-header">
+          <span class="from-badge badge-spring">Spring Boot</span>
+          <span class="arrow-icon">→</span>
+          <span class="to-badge badge-browser">Browser</span>
+        </div>
+        <div class="step-action"><span class="redirect">302 Redirect → Keycloak Authorization Endpoint</span></div>
+        <div class="step-snippet"><span class="dim">GET</span> <span class="blue">:8180/realms/demo-realm/protocol/openid-connect/auth</span>
+  ?response_type=<span class="orange">code</span>
+  &amp;client_id=<span class="orange">spring-demo-client</span>
+  &amp;redirect_uri=<span class="orange">http://52.65.212.193:8080/login/oauth2/code/keycloak</span>
+  &amp;scope=<span class="orange">openid profile email roles</span>
+  &amp;state=<span class="orange">random-csrf-token</span></div>
+      </div>
+    </div>
+
+    <!-- Step 5 -->
+    <div class="step step-green">
+      <div class="step-num">5</div>
+      <div class="step-body">
+        <div class="step-header">
+          <span class="from-badge badge-browser">Browser</span>
+          <span class="arrow-icon">→</span>
+          <span class="to-badge badge-keycloak">Keycloak</span>
+        </div>
+        <div class="step-action"><span class="method">GET</span> <span class="url">Keycloak Login Page</span></div>
+        <div class="step-desc">Browser follows the redirect. Keycloak renders its own login form (username + password). Spring Boot is not involved at this point.</div>
+      </div>
+    </div>
+
+    <!-- Step 6 -->
+    <div class="step step-orange">
+      <div class="step-num">6</div>
+      <div class="step-body">
+        <div class="step-header">
+          <span class="from-badge badge-user">User</span>
+          <span class="arrow-icon">→</span>
+          <span class="to-badge badge-keycloak">Keycloak</span>
+        </div>
+        <div class="step-action"><span class="method">POST</span> <span class="url">Keycloak Login Form Submit</span></div>
+        <div class="step-desc">User types username &amp; password and submits. Keycloak validates credentials against its user store in <code>demo-realm</code>. Spring Boot never sees the password.</div>
+        <div class="step-snippet">username=alice&amp;password=secret&amp;credentialId=</div>
+      </div>
+    </div>
+
+    <!-- Step 7 -->
+    <div class="step step-purple">
+      <div class="step-num">7</div>
+      <div class="step-body">
+        <div class="step-header">
+          <span class="from-badge badge-keycloak">Keycloak</span>
+          <span class="arrow-icon">→</span>
+          <span class="to-badge badge-browser">Browser</span>
+        </div>
+        <div class="step-action"><span class="redirect">302 Redirect → Spring Boot Callback URL</span></div>
+        <div class="step-snippet"><span class="dim">GET</span> <span class="blue">http://52.65.212.193:8080/login/oauth2/code/keycloak</span>
+  ?code=<span class="orange">AUTH_CODE_abc123</span>
+  &amp;state=<span class="orange">random-csrf-token</span></div>
+        <div class="step-desc">Keycloak sends a short-lived authorization code (not the token yet).</div>
+      </div>
+    </div>
+
+    <!-- Step 8 -->
+    <div class="step step-blue">
+      <div class="step-num">8</div>
+      <div class="step-body">
+        <div class="step-header">
+          <span class="from-badge badge-browser">Browser</span>
+          <span class="arrow-icon">→</span>
+          <span class="to-badge badge-spring">Spring Boot</span>
+        </div>
+        <div class="step-action"><span class="method">GET</span> <span class="url">/login/oauth2/code/keycloak?code=AUTH_CODE</span></div>
+        <div class="step-desc">Spring receives the authorization code. Validates the <code>state</code> to prevent CSRF. Then performs a back-channel (server-to-server) token exchange.</div>
+      </div>
+    </div>
+
+    <!-- Step 9 -->
+    <div class="step step-green">
+      <div class="step-num">9</div>
+      <div class="step-body">
+        <div class="step-header">
+          <span class="from-badge badge-spring">Spring Boot</span>
+          <span class="arrow-icon">→</span>
+          <span class="to-badge badge-keycloak">Keycloak</span>
+          <span style="font-size:0.68rem;color:#64748b;margin-left:4px">(back-channel)</span>
+        </div>
+        <div class="step-action"><span class="method">POST</span> <span class="url">:8180/…/token</span></div>
+        <div class="step-snippet"><span class="dim">POST</span> <span class="blue">:8180/realms/demo-realm/protocol/openid-connect/token</span>
+  grant_type=<span class="orange">authorization_code</span>
+  code=<span class="orange">AUTH_CODE_abc123</span>
+  redirect_uri=<span class="orange">http://52.65.212.193:8080/login/oauth2/code/keycloak</span>
+  client_id=<span class="orange">spring-demo-client</span>
+  client_secret=<span class="orange">super-secret-client-key</span></div>
+      </div>
+    </div>
+
+    <!-- Step 10 -->
+    <div class="step step-teal">
+      <div class="step-num">10</div>
+      <div class="step-body">
+        <div class="step-header">
+          <span class="from-badge badge-keycloak">Keycloak</span>
+          <span class="arrow-icon">→</span>
+          <span class="to-badge badge-spring">Spring Boot</span>
+          <span style="font-size:0.68rem;color:#64748b;margin-left:4px">(back-channel)</span>
+        </div>
+        <div class="step-action"><span class="method">200 OK</span> — Token Response</div>
+        <div class="step-snippet">{
+  <span class="blue">"access_token"</span>:  <span class="orange">"eyJhbG..."</span>,  <span class="dim">// used for API calls</span>
+  <span class="blue">"id_token"</span>:      <span class="orange">"eyJhbG..."</span>,  <span class="dim">// OIDC: user identity</span>
+  <span class="blue">"refresh_token"</span>: <span class="orange">"eyJhbG..."</span>,  <span class="dim">// get new access token</span>
+  <span class="blue">"expires_in"</span>:    <span class="orange">300</span>,
+  <span class="blue">"token_type"</span>:    <span class="orange">"Bearer"</span>
+}</div>
+      </div>
+    </div>
+
+    <!-- Step 11 -->
+    <div class="step step-green">
+      <div class="step-num">11</div>
+      <div class="step-body">
+        <div class="step-header">
+          <span class="from-badge badge-spring">Spring Boot</span>
+          <span style="font-size:0.72rem;color:#64748b">(internal)</span>
+        </div>
+        <div class="step-action">Creates <span class="code">OidcUser</span> session from ID token</div>
+        <div class="step-desc">Spring parses the <code>id_token</code> claims: <code>preferred_username</code>, <code>email</code>, <code>given_name</code>, <code>family_name</code>. Stores the user in the HTTP session. Scope <code>openid</code> is what triggered OIDC mode.</div>
+        <div class="step-snippet"><span class="dim">ID Token claims used by HomeController:</span>
+  user.getPreferredUsername()  <span class="dim">→ "alice"</span>
+  user.getEmail()              <span class="dim">→ "alice@example.com"</span>
+  user.getGivenName()          <span class="dim">→ "Alice"</span>
+  user.getAuthorities()        <span class="dim">→ [ROLE_USER, SCOPE_openid, ...]</span></div>
+      </div>
+    </div>
+
+    <!-- Step 12 -->
+    <div class="step step-purple">
+      <div class="step-num">12</div>
+      <div class="step-body">
+        <div class="step-header">
+          <span class="from-badge badge-spring">Spring Boot</span>
+          <span class="arrow-icon">→</span>
+          <span class="to-badge badge-browser">Browser</span>
+        </div>
+        <div class="step-action"><span class="redirect">302 Redirect → /  (defaultSuccessUrl)</span></div>
+        <div class="step-desc">Configured in SecurityConfig: <code>.defaultSuccessUrl("/", true)</code>. Sets a session cookie on the browser.</div>
+      </div>
+    </div>
+
+    <!-- Step 13 -->
+    <div class="step step-blue">
+      <div class="step-num">13</div>
+      <div class="step-body">
+        <div class="step-header">
+          <span class="from-badge badge-browser">Browser</span>
+          <span class="arrow-icon">→</span>
+          <span class="to-badge badge-spring">Spring Boot</span>
+        </div>
+        <div class="step-action"><span class="method">GET</span> <span class="url">/</span>  <span style="color:#64748b;font-size:0.72rem">(with session cookie)</span></div>
+        <div class="step-desc">Browser follows redirect, sends session cookie. Spring looks up the <code>OidcUser</code> from the session.</div>
+      </div>
+    </div>
+
+    <!-- Step 14 -->
+    <div class="step step-teal">
+      <div class="step-num">14</div>
+      <div class="step-body">
+        <div class="step-header">
+          <span class="from-badge badge-spring">Spring Boot</span>
+          <span class="arrow-icon">→</span>
+          <span class="to-badge badge-browser">Browser</span>
+        </div>
+        <div class="step-action"><span class="method">200 OK</span> — <span class="url">home.html</span> (Thymeleaf)</div>
+        <div class="step-desc"><code>HomeController.home()</code> injects username, email, fullName, and roles into the Thymeleaf model. Renders <code>templates/home.html</code>.</div>
+        <div class="step-snippet">model: username="alice"
+       email="alice@example.com"
+       fullName="Alice Smith"
+       roles=["USER", "openid", "profile", "email"]</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="note-box">
+    <strong>Key design choices in the code:</strong><br/>
+    • <strong>No Spring login page</strong> — <code>.loginPage("/oauth2/authorization/keycloak")</code> in <code>SecurityConfig</code> sends users directly to Keycloak.<br/>
+    • <strong>Session-based</strong> — the browser chain uses HTTP sessions (not stateless). The API chain (<code>/api/**</code>) is stateless JWT.<br/>
+    • <strong>Two filter chains</strong> — <code>@Order(1)</code> <code>apiFilterChain</code> handles <code>/api/**</code>; <code>@Order(2)</code> <code>browserFilterChain</code> handles everything else.
+  </div>
+</div>
+
+
+<!-- ════════════════════════════════════════════════
+     TAB 2: API LOGIN (Direct JWT / Resource Server)
+     ════════════════════════════════════════════════ -->
+<div id="tab-api" class="tab-panel">
+
+  <div class="actors">
+    <div class="actor-card actor-browser">
+      <div class="actor-icon">🔌</div>
+      <div class="actor-name">API Client</div>
+      <div class="actor-port">curl / Postman / mobile app</div>
+    </div>
+    <div class="actor-card actor-spring">
+      <div class="actor-icon">🍃</div>
+      <div class="actor-name">Spring Boot</div>
+      <div class="actor-port">:8080  (apiFilterChain, STATELESS)</div>
+    </div>
+    <div class="actor-card actor-keycloak">
+      <div class="actor-icon">🔑</div>
+      <div class="actor-name">Keycloak</div>
+      <div class="actor-port">:8180  realm: demo-realm</div>
+    </div>
+  </div>
+
+  <div class="sequence">
+    <div class="lifeline-keycloak"></div>
+
+    <!-- Step 1 -->
+    <div class="step step-orange">
+      <div class="step-num">1</div>
+      <div class="step-body">
+        <div class="step-header">
+          <span class="from-badge badge-browser">API Client</span>
+          <span class="arrow-icon">→</span>
+          <span class="to-badge badge-keycloak">Keycloak</span>
+          <span style="font-size:0.68rem;color:#64748b;margin-left:4px">(direct — Spring not involved)</span>
+        </div>
+        <div class="step-action"><span class="method">POST</span> <span class="url">:8180/realms/demo-realm/protocol/openid-connect/token</span></div>
+        <div class="step-desc">Client sends credentials directly to Keycloak. Spring Boot never sees the password. Uses <code>password</code> grant (Resource Owner Password Credentials).</div>
+        <div class="step-snippet">grant_type=<span class="orange">password</span>
+client_id=<span class="orange">spring-demo-client</span>
+client_secret=<span class="orange">super-secret-client-key</span>
+username=<span class="orange">alice</span>
+password=<span class="orange">secret</span></div>
+      </div>
+    </div>
+
+    <!-- Step 2 -->
+    <div class="step step-teal">
+      <div class="step-num">2</div>
+      <div class="step-body">
+        <div class="step-header">
+          <span class="from-badge badge-keycloak">Keycloak</span>
+          <span class="arrow-icon">→</span>
+          <span class="to-badge badge-browser">API Client</span>
+        </div>
+        <div class="step-action"><span class="method">200 OK</span> — JWT Access Token</div>
+        <div class="step-desc">Keycloak checks credentials, looks up the user's roles in <code>demo-realm</code>, signs a JWT with its RSA private key.</div>
+        <div class="step-snippet">{
+  <span class="blue">"access_token"</span>: <span class="orange">"eyJhbGciOiJSUzI1NiIs..."</span>,
+  <span class="blue">"expires_in"</span>:   <span class="orange">300</span>,
+  <span class="blue">"token_type"</span>:   <span class="orange">"Bearer"</span>
+}
+
+<span class="dim">JWT Payload contains:</span>
+  <span class="purple">realm_access.roles</span>: ["USER", "default-roles-demo-realm"]
+  <span class="purple">resource_access.spring-demo-client.roles</span>: [...]
+  <span class="purple">preferred_username</span>: "alice"
+  <span class="purple">iss</span>: "http://52.65.212.193:8180/realms/demo-realm"</div>
+      </div>
+    </div>
+
+    <!-- Step 3 -->
+    <div class="step step-blue">
+      <div class="step-num">3</div>
+      <div class="step-body">
+        <div class="step-header">
+          <span class="from-badge badge-browser">API Client</span>
+          <span class="arrow-icon">→</span>
+          <span class="to-badge badge-spring">Spring Boot</span>
+        </div>
+        <div class="step-action"><span class="method">GET</span> <span class="url">:8080/api/user/profile</span></div>
+        <div class="step-desc">Client attaches the JWT in every request. Spring's <code>apiFilterChain</code> intercepts at <code>/api/**</code>.</div>
+        <div class="step-snippet">Authorization: Bearer <span class="orange">eyJhbGciOiJSUzI1NiIs...</span></div>
+      </div>
+    </div>
+
+    <!-- Step 4 -->
+    <div class="step step-green">
+      <div class="step-num">4</div>
+      <div class="step-body">
+        <div class="step-header">
+          <span class="from-badge badge-spring">Spring Boot</span>
+          <span class="arrow-icon">→</span>
+          <span class="to-badge badge-keycloak">Keycloak</span>
+          <span style="font-size:0.68rem;color:#64748b;margin-left:4px">(once at startup / on key rotation)</span>
+        </div>
+        <div class="step-action"><span class="method">GET</span> <span class="url">:8180/realms/demo-realm/protocol/openid-connect/certs</span></div>
+        <div class="step-desc">Spring fetches Keycloak's public RSA keys (JWK Set) on first request. Keys are cached — no round-trip to Keycloak per API call. Configured via <code>jwk-set-uri</code> in <code>application.yml</code>.</div>
+        <div class="step-snippet"><span class="dim">Response: JWK Set (Keycloak's public key)</span>
+{ "keys": [{ "kty":"RSA","kid":"abc123","n":"...","e":"AQAB" }] }</div>
+      </div>
+    </div>
+
+    <!-- Step 5 -->
+    <div class="step step-green">
+      <div class="step-num">5</div>
+      <div class="step-body">
+        <div class="step-header">
+          <span class="from-badge badge-spring">Spring Boot</span>
+          <span style="font-size:0.72rem;color:#64748b">(local validation — no Keycloak call)</span>
+        </div>
+        <div class="step-action">Validates JWT locally</div>
+        <div class="step-desc">Spring verifies: ① RSA signature (using cached public key), ② <code>exp</code> not expired, ③ <code>iss</code> matches <code>issuer-uri</code>. Stateless — no session, no DB lookup.</div>
+        <div class="step-snippet">Checks:
+  signature  → valid (matches Keycloak public key)
+  exp        → not expired
+  iss        → "http://52.65.212.193:8180/realms/demo-realm" ✓</div>
+      </div>
+    </div>
+
+    <!-- Step 6 -->
+    <div class="step step-purple">
+      <div class="step-num">6</div>
+      <div class="step-body">
+        <div class="step-header">
+          <span class="from-badge badge-spring">Spring Boot</span>
+          <span style="font-size:0.72rem;color:#64748b">(KeycloakJwtRoleConverter)</span>
+        </div>
+        <div class="step-action">Extracts roles → Spring Security authorities</div>
+        <div class="step-desc"><code>KeycloakJwtRoleConverter</code> reads <code>realm_access.roles</code> and <code>resource_access.spring-demo-client.roles</code> from the JWT. Maps each role to a <code>ROLE_</code>-prefixed Spring authority (uppercased).</div>
+        <div class="step-snippet">realm_access.roles: ["USER"]
+  → SimpleGrantedAuthority("<span class="orange">ROLE_USER</span>")
+
+resource_access["spring-demo-client"].roles: ["admin"]
+  → SimpleGrantedAuthority("<span class="orange">ROLE_ADMIN</span>")</div>
+      </div>
+    </div>
+
+    <!-- Step 7 -->
+    <div class="step step-teal">
+      <div class="step-num">7</div>
+      <div class="step-body">
+        <div class="step-header">
+          <span class="from-badge badge-spring">Spring Boot</span>
+          <span style="font-size:0.72rem;color:#64748b">(SecurityConfig authorization check)</span>
+        </div>
+        <div class="step-action">Access control check</div>
+        <div class="step-desc">SecurityConfig rules applied to <code>/api/user/profile</code>: requires <code>ROLE_USER</code>. Since the JWT has this role, access is granted and the controller runs.</div>
+        <div class="step-snippet">SecurityConfig (apiFilterChain):
+  <span class="orange">/api/public/**</span> → permitAll()
+  <span class="orange">/api/user/**</span>   → hasRole("USER")   <span class="dim">← this request passes ✓</span>
+  <span class="orange">/api/admin/**</span>  → hasRole("ADMIN")</div>
+      </div>
+    </div>
+
+    <!-- Step 8 -->
+    <div class="step step-teal">
+      <div class="step-num">8</div>
+      <div class="step-body">
+        <div class="step-header">
+          <span class="from-badge badge-spring">Spring Boot</span>
+          <span class="arrow-icon">→</span>
+          <span class="to-badge badge-browser">API Client</span>
+        </div>
+        <div class="step-action"><span class="method">200 OK</span> — UserInfoDto JSON</div>
+        <div class="step-desc"><code>UserController.getProfile()</code> reads claims directly from the <code>Jwt</code> object (no DB call).</div>
+        <div class="step-snippet">{
+  <span class="blue">"username"</span>: <span class="orange">"alice"</span>,
+  <span class="blue">"email"</span>:    <span class="orange">"alice@example.com"</span>,
+  <span class="blue">"subject"</span>:  <span class="orange">"user-uuid-from-keycloak"</span>,
+  <span class="blue">"roles"</span>:    <span class="orange">["ROLE_USER"]</span>,
+  <span class="blue">"issuer"</span>:   <span class="orange">"http://52.65.212.193:8180/realms/demo-realm"</span>
+}</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="note-box">
+    <strong>Error responses:</strong><br/>
+    • <strong>401 Unauthorized</strong> — missing token, expired token, or invalid signature.<br/>
+    • <strong>403 Forbidden</strong> — valid token but wrong role (e.g., USER trying to access <code>/api/admin/**</code>).<br/>
+    • <strong>No Keycloak call per request</strong> — JWT validation is fully local (signature check + expiry). Only the public key fetch hits Keycloak, and it's cached.
+  </div>
+</div>
+
+
+<!-- ════════════════════════════════════════════════
+     TAB 3: REGISTER
+     ════════════════════════════════════════════════ -->
+<div id="tab-register" class="tab-panel">
+
+  <div class="actors">
+    <div class="actor-card actor-browser">
+      <div class="actor-icon">🌐</div>
+      <div class="actor-name">Browser</div>
+      <div class="actor-port">New user signing up</div>
+    </div>
+    <div class="actor-card actor-spring">
+      <div class="actor-icon">🍃</div>
+      <div class="actor-name">Spring Boot</div>
+      <div class="actor-port">:8080  (no custom register endpoint)</div>
+    </div>
+    <div class="actor-card actor-keycloak">
+      <div class="actor-icon">🔑</div>
+      <div class="actor-name">Keycloak</div>
+      <div class="actor-port">:8180  handles all registration</div>
+    </div>
+  </div>
+
+  <div class="note-box" style="max-width:860px;margin:0 auto 24px;">
+    <strong>Registration is handled entirely by Keycloak.</strong> This Spring Boot app has no custom registration controller or form. When a user needs to register, they do so on Keycloak's built-in registration page. The Spring app only needs to enable <em>User Registration</em> in the Keycloak realm settings.
+  </div>
+
+  <div class="sequence">
+    <div class="lifeline-keycloak"></div>
+
+    <!-- Step 1 -->
+    <div class="step step-blue">
+      <div class="step-num">1</div>
+      <div class="step-body">
+        <div class="step-header">
+          <span class="from-badge badge-browser">Browser</span>
+          <span class="arrow-icon">→</span>
+          <span class="to-badge badge-spring">Spring Boot</span>
+        </div>
+        <div class="step-action"><span class="method">GET</span> <span class="url">http://52.65.212.193:8080/</span></div>
+        <div class="step-desc">New user visits the app. No session → Spring redirects through the same OAuth2 flow as login.</div>
+      </div>
+    </div>
+
+    <!-- Step 2 -->
+    <div class="step step-purple">
+      <div class="step-num">2</div>
+      <div class="step-body">
+        <div class="step-header">
+          <span class="from-badge badge-spring">Spring Boot</span>
+          <span class="arrow-icon">→</span>
+          <span class="to-badge badge-browser">Browser</span>
+        </div>
+        <div class="step-action"><span class="redirect">302 → Keycloak Login Page</span></div>
+        <div class="step-desc">Same redirect chain as login: <code>/oauth2/authorization/keycloak</code> → Keycloak authorization endpoint.</div>
+      </div>
+    </div>
+
+    <!-- Step 3 -->
+    <div class="step step-green">
+      <div class="step-num">3</div>
+      <div class="step-body">
+        <div class="step-header">
+          <span class="from-badge badge-browser">Browser</span>
+          <span class="arrow-icon">→</span>
+          <span class="to-badge badge-keycloak">Keycloak</span>
+        </div>
+        <div class="step-action">Keycloak renders Login Page with <span class="code">"Register"</span> link</div>
+        <div class="step-desc">Keycloak's login page shows a "Register" link if <em>User Registration</em> is enabled in <strong>Realm Settings → Login → User registration: ON</strong>.</div>
+      </div>
+    </div>
+
+    <!-- Step 4 -->
+    <div class="step step-orange">
+      <div class="step-num">4</div>
+      <div class="step-body">
+        <div class="step-header">
+          <span class="from-badge badge-user">New User</span>
+          <span class="arrow-icon">→</span>
+          <span class="to-badge badge-keycloak">Keycloak</span>
+        </div>
+        <div class="step-action"><span class="method">GET</span> <span class="url">Keycloak Registration Page</span></div>
+        <div class="step-desc">User clicks "Register". Keycloak shows its own registration form.</div>
+        <div class="step-snippet"><span class="dim">GET</span> <span class="blue">:8180/realms/demo-realm/protocol/openid-connect/registrations</span>
+  ?client_id=spring-demo-client
+  &amp;redirect_uri=http://52.65.212.193:8080/login/oauth2/code/keycloak
+  &amp;response_type=code
+  &amp;scope=openid profile email roles</div>
+      </div>
+    </div>
+
+    <!-- Step 5 -->
+    <div class="step step-orange">
+      <div class="step-num">5</div>
+      <div class="step-body">
+        <div class="step-header">
+          <span class="from-badge badge-user">New User</span>
+          <span class="arrow-icon">→</span>
+          <span class="to-badge badge-keycloak">Keycloak</span>
+        </div>
+        <div class="step-action"><span class="method">POST</span> <span class="url">Keycloak Registration Form Submit</span></div>
+        <div class="step-desc">User fills in and submits the registration form. Keycloak validates and creates the user account.</div>
+        <div class="step-snippet">firstName=<span class="orange">Alice</span>
+lastName=<span class="orange">Smith</span>
+email=<span class="orange">alice@example.com</span>
+username=<span class="orange">alice</span>
+password=<span class="orange">newpassword</span>
+password-confirm=<span class="orange">newpassword</span></div>
+      </div>
+    </div>
+
+    <!-- Step 6 -->
+    <div class="step step-green">
+      <div class="step-num">6</div>
+      <div class="step-body">
+        <div class="step-header">
+          <span class="from-badge badge-keycloak">Keycloak</span>
+          <span style="font-size:0.72rem;color:#64748b">(internal)</span>
+        </div>
+        <div class="step-action">Creates user account in <span class="code">demo-realm</span></div>
+        <div class="step-desc">Keycloak creates the user in its database, hashes the password, and assigns <strong>default realm roles</strong> (e.g., <code>default-roles-demo-realm</code>). Does NOT automatically assign <code>USER</code> or <code>ADMIN</code> — those must be assigned manually in Keycloak Admin UI or via Admin REST API.</div>
+        <div class="step-snippet"><span class="dim">Keycloak Admin UI → Users → alice → Role Mapping</span>
+  Assign realm role: <span class="orange">USER</span>  <span class="dim">← must be done manually</span></div>
+      </div>
+    </div>
+
+    <!-- Step 7 -->
+    <div class="step step-purple">
+      <div class="step-num">7</div>
+      <div class="step-body">
+        <div class="step-header">
+          <span class="from-badge badge-keycloak">Keycloak</span>
+          <span class="arrow-icon">→</span>
+          <span class="to-badge badge-browser">Browser</span>
+        </div>
+        <div class="step-action"><span class="redirect">302 → Spring Boot Callback (with authorization code)</span></div>
+        <div class="step-desc">After successful registration, Keycloak automatically logs the user in and sends the authorization code back to Spring Boot — same as step 7 in the login flow.</div>
+        <div class="step-snippet"><span class="dim">GET</span> <span class="blue">http://52.65.212.193:8080/login/oauth2/code/keycloak</span>
+  ?code=<span class="orange">NEW_AUTH_CODE</span>
+  &amp;state=<span class="orange">random-csrf-token</span></div>
+      </div>
+    </div>
+
+    <!-- Step 8 -->
+    <div class="step step-teal">
+      <div class="step-num">8</div>
+      <div class="step-body">
+        <div class="step-header">
+          <span class="from-badge badge-spring">Spring Boot</span>
+          <span class="arrow-icon">→</span>
+          <span class="to-badge badge-browser">Browser</span>
+        </div>
+        <div class="step-action"><span class="method">200 OK</span> — home.html (logged in)</div>
+        <div class="step-desc">Spring Boot completes the token exchange (steps 9–13 from the login flow) and renders the home page. New user is now authenticated.</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="note-box note-box-orange">
+    <strong>Important:</strong> After registration, Keycloak assigns only <em>default realm roles</em>. The new user will NOT have <code>ROLE_USER</code> or <code>ROLE_ADMIN</code> unless:<br/>
+    • You configure a <strong>Default Role</strong> in Keycloak (<em>Realm Settings → User Registration → Default Roles</em>), or<br/>
+    • An admin manually assigns roles via Keycloak Admin UI, or<br/>
+    • You use a <strong>Keycloak event listener</strong> to auto-assign roles on registration via the Admin REST API.
+  </div>
+</div>
+
+
+<!-- ════════════════════════════════════════════════
+     TAB 4: LOGOUT
+     ════════════════════════════════════════════════ -->
+<div id="tab-logout" class="tab-panel">
+
+  <div class="actors">
+    <div class="actor-card actor-browser">
+      <div class="actor-icon">🌐</div>
+      <div class="actor-name">Browser</div>
+      <div class="actor-port">Authenticated user</div>
+    </div>
+    <div class="actor-card actor-spring">
+      <div class="actor-icon">🍃</div>
+      <div class="actor-name">Spring Boot</div>
+      <div class="actor-port">:8080  (session invalidation)</div>
+    </div>
+    <div class="actor-card actor-keycloak">
+      <div class="actor-icon">🔑</div>
+      <div class="actor-name">Keycloak</div>
+      <div class="actor-port">:8180  (SSO session destroy)</div>
+    </div>
+  </div>
+
+  <div class="sequence">
+    <div class="lifeline-keycloak"></div>
+
+    <!-- Step 1 -->
+    <div class="step step-red">
+      <div class="step-num">1</div>
+      <div class="step-body">
+        <div class="step-header">
+          <span class="from-badge badge-user">User</span>
+          <span class="arrow-icon">→</span>
+          <span class="to-badge badge-browser">Browser</span>
+        </div>
+        <div class="step-action">Clicks <span class="code">"Sign Out"</span> button in home.html</div>
+        <div class="step-desc">The <code>home.html</code> template renders: <code>&lt;a href="/logout" class="logout-btn"&gt;Sign Out&lt;/a&gt;</code></div>
+      </div>
+    </div>
+
+    <!-- Step 2 -->
+    <div class="step step-red">
+      <div class="step-num">2</div>
+      <div class="step-body">
+        <div class="step-header">
+          <span class="from-badge badge-browser">Browser</span>
+          <span class="arrow-icon">→</span>
+          <span class="to-badge badge-spring">Spring Boot</span>
+        </div>
+        <div class="step-action"><span class="method">GET</span> <span class="url">/logout</span></div>
+        <div class="step-desc">Browser sends the GET request with the session cookie. Spring Security intercepts this URL.</div>
+      </div>
+    </div>
+
+    <!-- Step 3 -->
+    <div class="step step-red">
+      <div class="step-num">3</div>
+      <div class="step-body">
+        <div class="step-header">
+          <span class="from-badge badge-spring">Spring Boot</span>
+          <span style="font-size:0.72rem;color:#64748b">(internal)</span>
+        </div>
+        <div class="step-action">Destroys Spring Security session</div>
+        <div class="step-desc">Configured in SecurityConfig: <code>.invalidateHttpSession(true)</code> + <code>.clearAuthentication(true)</code>. Removes the <code>OidcUser</code> from the session. Invalidates the session cookie.</div>
+        <div class="step-snippet"><span class="dim">SecurityConfig logout config:</span>
+.logout(logout -> logout
+  .logoutSuccessUrl(<span class="orange">"http://52.65.212.193:8180/realms/demo-realm"</span>
+    + <span class="orange">"/protocol/openid-connect/logout"</span>
+    + <span class="orange">"?redirect_uri=http://52.65.212.193:8080/oauth2/authorization/keycloak"</span>)
+  .invalidateHttpSession(<span class="orange">true</span>)
+  .clearAuthentication(<span class="orange">true</span>)
+)</div>
+      </div>
+    </div>
+
+    <!-- Step 4 -->
+    <div class="step step-purple">
+      <div class="step-num">4</div>
+      <div class="step-body">
+        <div class="step-header">
+          <span class="from-badge badge-spring">Spring Boot</span>
+          <span class="arrow-icon">→</span>
+          <span class="to-badge badge-browser">Browser</span>
+        </div>
+        <div class="step-action"><span class="redirect">302 Redirect → Keycloak Logout Endpoint</span></div>
+        <div class="step-snippet"><span class="dim">GET</span> <span class="blue">:8180/realms/demo-realm/protocol/openid-connect/logout</span>
+  ?redirect_uri=<span class="orange">http://52.65.212.193:8080/oauth2/authorization/keycloak</span></div>
+      </div>
+    </div>
+
+    <!-- Step 5 -->
+    <div class="step step-orange">
+      <div class="step-num">5</div>
+      <div class="step-body">
+        <div class="step-header">
+          <span class="from-badge badge-browser">Browser</span>
+          <span class="arrow-icon">→</span>
+          <span class="to-badge badge-keycloak">Keycloak</span>
+        </div>
+        <div class="step-action"><span class="method">GET</span> <span class="url">Keycloak Logout Endpoint</span></div>
+        <div class="step-desc">Browser follows the redirect to Keycloak's logout URL.</div>
+      </div>
+    </div>
+
+    <!-- Step 6 -->
+    <div class="step step-red">
+      <div class="step-num">6</div>
+      <div class="step-body">
+        <div class="step-header">
+          <span class="from-badge badge-keycloak">Keycloak</span>
+          <span style="font-size:0.72rem;color:#64748b">(internal)</span>
+        </div>
+        <div class="step-action">Destroys Keycloak SSO session &amp; invalidates tokens</div>
+        <div class="step-desc">Keycloak ends the SSO session for this user. Refresh tokens are revoked. Other apps using the same Keycloak SSO session may also be logged out (back-channel logout, if configured).</div>
+      </div>
+    </div>
+
+    <!-- Step 7 -->
+    <div class="step step-purple">
+      <div class="step-num">7</div>
+      <div class="step-body">
+        <div class="step-header">
+          <span class="from-badge badge-keycloak">Keycloak</span>
+          <span class="arrow-icon">→</span>
+          <span class="to-badge badge-browser">Browser</span>
+        </div>
+        <div class="step-action"><span class="redirect">302 Redirect → redirect_uri</span></div>
+        <div class="step-desc">Keycloak redirects to the <code>redirect_uri</code> specified in the logout URL: <code>http://52.65.212.193:8080/oauth2/authorization/keycloak</code>. This triggers the OAuth2 authorization flow again.</div>
+      </div>
+    </div>
+
+    <!-- Step 8 -->
+    <div class="step step-blue">
+      <div class="step-num">8</div>
+      <div class="step-body">
+        <div class="step-header">
+          <span class="from-badge badge-browser">Browser</span>
+          <span class="arrow-icon">→</span>
+          <span class="to-badge badge-spring">Spring Boot</span>
+        </div>
+        <div class="step-action"><span class="method">GET</span> <span class="url">/oauth2/authorization/keycloak</span></div>
+        <div class="step-desc">Spring redirects browser back to Keycloak's login page. The user sees the login form again and the cycle is complete.</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="note-box note-box-orange">
+    <strong>Note:</strong> The <code>redirect_uri</code> after logout points to <code>/oauth2/authorization/keycloak</code> (the authorization initiation URL), not the app homepage. This means the browser is immediately redirected back to the Keycloak <strong>login page</strong> — the user cannot access any page of the app without logging in again.
+  </div>
+</div>
+
+
+<!-- ════════════════════════════════════════════════
+     SHARED: ENDPOINTS TABLE
+     ════════════════════════════════════════════════ -->
+<div class="endpoint-section">
+  <h2>All Endpoints at a Glance</h2>
+  <table class="endpoint-table">
+    <thead>
+      <tr>
+        <th>Method</th>
+        <th>URL</th>
+        <th>Auth Required</th>
+        <th>Controller / Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td class="method-get">GET</td>
+        <td class="path-col">:8080/</td>
+        <td class="auth-user">OidcUser session (ROLE_USER)</td>
+        <td>HomeController — renders home.html (Thymeleaf)</td>
+      </tr>
+      <tr>
+        <td class="method-get">GET</td>
+        <td class="path-col">:8080/api/public/hello</td>
+        <td class="auth-public">None — public</td>
+        <td>PublicController — open endpoint</td>
+      </tr>
+      <tr>
+        <td class="method-get">GET</td>
+        <td class="path-col">:8080/api/public/info</td>
+        <td class="auth-public">None — public</td>
+        <td>PublicController — app info</td>
+      </tr>
+      <tr>
+        <td class="method-get">GET</td>
+        <td class="path-col">:8080/api/user/profile</td>
+        <td class="auth-user">JWT with ROLE_USER</td>
+        <td>UserController — returns UserInfoDto from JWT claims</td>
+      </tr>
+      <tr>
+        <td class="method-get">GET</td>
+        <td class="path-col">:8080/api/user/dashboard</td>
+        <td class="auth-user">JWT with ROLE_USER or ROLE_ADMIN</td>
+        <td>UserController — @PreAuthorize("hasRole('USER') or hasRole('ADMIN')")</td>
+      </tr>
+      <tr>
+        <td class="method-get">GET</td>
+        <td class="path-col">:8080/api/admin/dashboard</td>
+        <td class="auth-admin">JWT with ROLE_ADMIN</td>
+        <td>AdminController — @PreAuthorize("hasRole('ADMIN')")</td>
+      </tr>
+      <tr>
+        <td class="method-get">GET</td>
+        <td class="path-col">:8080/api/admin/users</td>
+        <td class="auth-admin">JWT with ROLE_ADMIN</td>
+        <td>AdminController — placeholder for Keycloak Admin API</td>
+      </tr>
+      <tr>
+        <td class="method-get">GET</td>
+        <td class="path-col">:8080/api/admin/jwt-claims</td>
+        <td class="auth-admin">JWT with ROLE_ADMIN</td>
+        <td>AdminController — dumps all JWT claims (debug)</td>
+      </tr>
+      <tr>
+        <td class="method-get">GET</td>
+        <td class="path-col">:8080/actuator/health</td>
+        <td class="auth-public">None — public</td>
+        <td>Spring Actuator health check</td>
+      </tr>
+      <tr>
+        <td class="method-get">GET</td>
+        <td class="path-col">:8080/logout</td>
+        <td>Authenticated session</td>
+        <td>Spring Security — invalidates session, redirects to Keycloak logout</td>
+      </tr>
+      <tr>
+        <td class="method-post">POST</td>
+        <td class="path-col">:8180/realms/demo-realm/protocol/openid-connect/token</td>
+        <td class="auth-keycloak">client_id + credentials</td>
+        <td>Keycloak — issues JWT access token</td>
+      </tr>
+      <tr>
+        <td class="method-get">GET</td>
+        <td class="path-col">:8180/realms/demo-realm/protocol/openid-connect/certs</td>
+        <td class="auth-public">None</td>
+        <td>Keycloak — JWK Set (public keys for JWT verification)</td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
+
+<!-- ════════════════════════════════════════════════
+     SHARED: ROLE MAPPING FLOW
+     ════════════════════════════════════════════════ -->
+<div class="role-section">
+  <h2>Role Mapping: Keycloak JWT → Spring Security</h2>
+  <div class="role-flow">
+    <div class="role-box">
+      <div class="role-box-title">Keycloak JWT</div>
+      <div class="role-chip chip-kc">realm_access.roles</div><br/>
+      <div class="role-chip chip-kc">"USER"</div>
+      <div class="role-chip chip-kc">"ADMIN"</div>
+    </div>
+    <div class="role-arrow"></div>
+    <div class="role-box" style="background:#0f1117;border:1px dashed #334155;min-width:200px;">
+      <div class="role-box-title" style="color:#475569">KeycloakJwtRoleConverter</div>
+      <div style="font-size:0.7rem;color:#64748b;font-family:monospace;line-height:1.7">
+        reads realm_access.roles<br/>
+        reads resource_access<br/>
+        &nbsp;&nbsp;["spring-demo-client"].roles<br/>
+        adds "ROLE_" prefix<br/>
+        uppercases the role name
+      </div>
+    </div>
+    <div class="role-arrow"></div>
+    <div class="role-box">
+      <div class="role-box-title">Spring Authorities</div>
+      <div class="role-chip chip-sp">ROLE_USER</div>
+      <div class="role-chip chip-sp">ROLE_ADMIN</div>
+    </div>
+    <div class="role-arrow"></div>
+    <div class="role-box" style="min-width:200px;">
+      <div class="role-box-title">Access Check</div>
+      <div style="font-family:monospace;font-size:0.7rem;color:#94a3b8;text-align:left;line-height:1.9">
+        hasRole(<span style="color:#4ade80">"USER"</span>)&nbsp; → ROLE_USER<br/>
+        hasRole(<span style="color:#ef4444">"ADMIN"</span>) → ROLE_ADMIN<br/>
+        <span style="color:#475569">@PreAuthorize(...) also works</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<footer>keycloak-spring-demo &nbsp;·&nbsp; diagram.html &nbsp;·&nbsp; updated 2026-05-28</footer>
+
+<script>
+function switchTab(name, btn, colorSuffix) {
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b => {
+    b.classList.remove('active','active-purple','active-green','active-orange');
+  });
+  document.getElementById('tab-' + name).classList.add('active');
+  btn.classList.add('active' + colorSuffix);
+}
+</script>
+
+</body>
+</html>
