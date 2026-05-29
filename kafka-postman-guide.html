@@ -1,0 +1,601 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>How to Test Kafka with Postman</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: #f0f2f5;
+      color: #1f2937;
+      line-height: 1.6;
+    }
+
+    header {
+      background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+      color: white;
+      padding: 48px 24px 40px;
+      text-align: center;
+    }
+    header h1 { font-size: 2rem; font-weight: 700; margin-bottom: 8px; }
+    header p  { font-size: 1rem; opacity: 0.85; }
+
+    .badge {
+      display: inline-block;
+      padding: 3px 10px;
+      border-radius: 20px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      letter-spacing: 0.03em;
+    }
+    .badge-post   { background: #dcfce7; color: #166534; }
+    .badge-get    { background: #dbeafe; color: #1e40af; }
+    .badge-info   { background: #fef9c3; color: #854d0e; }
+    .badge-danger { background: #fee2e2; color: #991b1b; }
+
+    main {
+      max-width: 900px;
+      margin: 40px auto;
+      padding: 0 20px 60px;
+    }
+
+    /* Section headings */
+    .section-title {
+      font-size: 1.25rem;
+      font-weight: 700;
+      color: #111827;
+      margin: 40px 0 16px;
+      padding-bottom: 8px;
+      border-bottom: 2px solid #e5e7eb;
+    }
+
+    /* Step cards */
+    .step {
+      background: white;
+      border-radius: 12px;
+      box-shadow: 0 1px 6px rgba(0,0,0,0.08);
+      margin-bottom: 20px;
+      overflow: hidden;
+    }
+    .step-header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 16px 20px;
+      cursor: pointer;
+      user-select: none;
+    }
+    .step-header:hover { background: #f9fafb; }
+    .step-number {
+      width: 30px; height: 30px;
+      background: #4f46e5;
+      color: white;
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-weight: 700; font-size: 0.85rem;
+      flex-shrink: 0;
+    }
+    .step-title { flex: 1; font-weight: 600; font-size: 1rem; }
+    .chevron {
+      transition: transform 0.2s;
+      color: #9ca3af;
+      font-size: 1.1rem;
+    }
+    .step.open .chevron { transform: rotate(180deg); }
+
+    .step-body {
+      display: none;
+      padding: 0 20px 20px;
+      border-top: 1px solid #f3f4f6;
+    }
+    .step.open .step-body { display: block; }
+
+    /* Endpoint cards */
+    .endpoint {
+      background: white;
+      border-radius: 12px;
+      box-shadow: 0 1px 6px rgba(0,0,0,0.08);
+      margin-bottom: 20px;
+      overflow: hidden;
+    }
+    .endpoint-header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 16px 20px;
+      cursor: pointer;
+      user-select: none;
+    }
+    .endpoint-header:hover { background: #f9fafb; }
+    .endpoint-title { flex: 1; font-weight: 600; }
+    .endpoint.open .chevron { transform: rotate(180deg); }
+
+    .endpoint-body {
+      display: none;
+      padding: 0 20px 20px;
+      border-top: 1px solid #f3f4f6;
+    }
+    .endpoint.open .endpoint-body { display: block; }
+
+    /* Code blocks */
+    .code-block {
+      background: #1e293b;
+      color: #e2e8f0;
+      border-radius: 8px;
+      padding: 14px 16px;
+      font-family: 'Fira Code', 'Courier New', monospace;
+      font-size: 0.85rem;
+      overflow-x: auto;
+      margin: 12px 0;
+      position: relative;
+    }
+    .code-label {
+      font-size: 0.7rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: #94a3b8;
+      margin-bottom: 4px;
+    }
+    .copy-btn {
+      position: absolute;
+      top: 8px; right: 8px;
+      background: #334155;
+      color: #94a3b8;
+      border: none;
+      border-radius: 5px;
+      padding: 4px 10px;
+      font-size: 0.72rem;
+      cursor: pointer;
+    }
+    .copy-btn:hover { background: #475569; color: white; }
+    .copy-btn.copied { background: #166534; color: #bbf7d0; }
+
+    /* Key-value rows */
+    .kv-table { width: 100%; border-collapse: collapse; margin: 12px 0; }
+    .kv-table th, .kv-table td {
+      text-align: left;
+      padding: 8px 12px;
+      font-size: 0.875rem;
+      border-bottom: 1px solid #f3f4f6;
+    }
+    .kv-table th { background: #f9fafb; font-weight: 600; color: #6b7280; }
+    .kv-table td code {
+      background: #f1f5f9;
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-size: 0.82rem;
+    }
+
+    /* Response preview */
+    .response-box {
+      background: #f0fdf4;
+      border: 1px solid #bbf7d0;
+      border-radius: 8px;
+      padding: 12px 16px;
+      margin-top: 12px;
+    }
+    .response-box .label { font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.08em; color: #16a34a; font-weight: 600; margin-bottom: 6px; }
+
+    /* Note box */
+    .note {
+      background: #fefce8;
+      border-left: 4px solid #eab308;
+      border-radius: 0 8px 8px 0;
+      padding: 12px 14px;
+      margin: 12px 0;
+      font-size: 0.875rem;
+      color: #713f12;
+    }
+    .note strong { display: block; margin-bottom: 2px; }
+
+    /* Flow diagram */
+    .flow {
+      display: flex;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin: 14px 0;
+      font-size: 0.85rem;
+    }
+    .flow-box {
+      background: #ede9fe;
+      color: #4f46e5;
+      padding: 6px 14px;
+      border-radius: 6px;
+      font-weight: 600;
+    }
+    .flow-arrow { color: #9ca3af; font-size: 1.2rem; }
+
+    p { margin-top: 10px; font-size: 0.9rem; }
+    ul { margin-top: 8px; padding-left: 20px; font-size: 0.9rem; }
+    li { margin-bottom: 4px; }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>Testing Kafka Endpoints with Postman</h1>
+  <p>Step-by-step guide — Spring Boot + Keycloak JWT + Kafka &nbsp;|&nbsp; Base URL: <strong>http://localhost:8080</strong></p>
+</header>
+
+<main>
+
+  <!-- ── STEP 1 ── Get a JWT Token -->
+  <div class="section-title">Step 1 — Get a JWT Token from Keycloak</div>
+
+  <div class="step open" id="step-token">
+    <div class="step-header" onclick="toggle('step-token')">
+      <div class="step-number">1</div>
+      <div class="step-title">Obtain an access token (Password Grant)</div>
+      <span class="chevron">&#8964;</span>
+    </div>
+    <div class="step-body">
+      <p>All <code>/api/kafka/*</code> endpoints require a <strong>Bearer JWT</strong> issued by Keycloak. Use the Token endpoint below.</p>
+
+      <div class="code-label">POST — Keycloak Token URL</div>
+      <div class="code-block">
+        <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+        POST http://52.65.212.193:8180/realms/demo-realm/protocol/openid-connect/token
+      </div>
+
+      <p>In Postman, go to the <strong>Body</strong> tab → select <strong>x-www-form-urlencoded</strong> and add:</p>
+
+      <table class="kv-table">
+        <thead><tr><th>Key</th><th>Value</th></tr></thead>
+        <tbody>
+          <tr><td><code>grant_type</code></td><td><code>password</code></td></tr>
+          <tr><td><code>client_id</code></td><td><code>spring-demo-client</code></td></tr>
+          <tr><td><code>client_secret</code></td><td><code>super-secret-client-key</code></td></tr>
+          <tr><td><code>username</code></td><td><em>your Keycloak username</em></td></tr>
+          <tr><td><code>password</code></td><td><em>your Keycloak password</em></td></tr>
+          <tr><td><code>scope</code></td><td><code>openid</code></td></tr>
+        </tbody>
+      </table>
+
+      <div class="response-box">
+        <div class="label">Example Response</div>
+        <div class="code-block" style="background:#1e293b; margin:0;">{ "access_token": "eyJhbGci...", "token_type": "Bearer", "expires_in": 300 }</div>
+      </div>
+
+      <div class="note">
+        <strong>Tip</strong>
+        Copy the <code>access_token</code> value. You will paste it as a Bearer token in every request below.
+        Tokens expire after ~5 minutes — re-run this request to get a fresh one.
+      </div>
+    </div>
+  </div>
+
+  <!-- ── STEP 2 ── Set Authorization -->
+  <div class="step open" id="step-auth">
+    <div class="step-header" onclick="toggle('step-auth')">
+      <div class="step-number">2</div>
+      <div class="step-title">Add the token to every request</div>
+      <span class="chevron">&#8964;</span>
+    </div>
+    <div class="step-body">
+      <p>In each Postman request, go to the <strong>Authorization</strong> tab and set:</p>
+      <table class="kv-table">
+        <thead><tr><th>Field</th><th>Value</th></tr></thead>
+        <tbody>
+          <tr><td>Type</td><td><code>Bearer Token</code></td></tr>
+          <tr><td>Token</td><td><em>paste the access_token here</em></td></tr>
+        </tbody>
+      </table>
+
+      <p>Alternatively, add the header manually:</p>
+      <table class="kv-table">
+        <thead><tr><th>Header Key</th><th>Header Value</th></tr></thead>
+        <tbody>
+          <tr><td><code>Authorization</code></td><td><code>Bearer &lt;access_token&gt;</code></td></tr>
+          <tr><td><code>Content-Type</code></td><td><code>application/json</code> (for POST requests)</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ── KAFKA ENDPOINTS ── -->
+  <div class="section-title">Step 3 — Kafka Endpoints</div>
+
+  <!-- /api/kafka/info -->
+  <div class="endpoint" id="ep-info">
+    <div class="endpoint-header" onclick="toggle('ep-info')">
+      <span class="badge badge-get">GET</span>
+      <div class="endpoint-title">/api/kafka/info &nbsp;— Topic configuration</div>
+      <span class="chevron">&#8964;</span>
+    </div>
+    <div class="endpoint-body">
+      <p>Returns the Kafka topic setup and concept explanations. Good first request to confirm auth works.</p>
+
+      <div class="code-label">Request</div>
+      <div class="code-block">
+        <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+        GET http://localhost:8080/api/kafka/info
+Authorization: Bearer &lt;token&gt;
+      </div>
+
+      <div class="response-box">
+        <div class="label">Expected Response — 200 OK</div>
+        <div class="code-block" style="background:#1e293b; margin:0;">{
+  "topic": "user-events",
+  "partitions": 3,
+  "consumerGroup": "demo-group",
+  "concept": {
+    "key-routing": "same key → same partition → ordered delivery per user",
+    "offset": "position in partition log — consumers track where they left off",
+    "consumer-group": "each partition is consumed by exactly one member of the group",
+    "dlt": "dead letter topic receives messages after all retries fail",
+    "vs-rabbitmq": "Kafka retains messages after consumption (replay possible); RabbitMQ deletes after ack"
+  }
+}</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- /api/kafka/send -->
+  <div class="endpoint open" id="ep-send">
+    <div class="endpoint-header" onclick="toggle('ep-send')">
+      <span class="badge badge-post">POST</span>
+      <div class="endpoint-title">/api/kafka/send &nbsp;— Send a user event</div>
+      <span class="chevron">&#8964;</span>
+    </div>
+    <div class="endpoint-body">
+      <p>Publishes one event to the <strong>user-events</strong> topic. The message key is the authenticated username — same user always routes to the same partition.</p>
+
+      <div class="code-label">Request</div>
+      <div class="code-block">
+        <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+        POST http://localhost:8080/api/kafka/send
+Authorization: Bearer &lt;token&gt;
+Content-Type: application/json
+
+{ "action": "login" }
+      </div>
+
+      <p>The <code>action</code> field is optional — defaults to <code>"manual-trigger"</code> if omitted.</p>
+
+      <div class="response-box">
+        <div class="label">Expected Response — 200 OK</div>
+        <div class="code-block" style="background:#1e293b; margin:0;">{
+  "status": "sent",
+  "topic": "user-events",
+  "key": "alice",
+  "action": "login"
+}</div>
+      </div>
+
+      <div class="flow">
+        <div class="flow-box">Postman POST</div>
+        <span class="flow-arrow">&#8594;</span>
+        <div class="flow-box">KafkaController</div>
+        <span class="flow-arrow">&#8594;</span>
+        <div class="flow-box">KafkaMessagePublisher</div>
+        <span class="flow-arrow">&#8594;</span>
+        <div class="flow-box">topic: user-events</div>
+        <span class="flow-arrow">&#8594;</span>
+        <div class="flow-box">KafkaMessageConsumer</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- /api/kafka/send-fail -->
+  <div class="endpoint" id="ep-send-fail">
+    <div class="endpoint-header" onclick="toggle('ep-send-fail')">
+      <span class="badge badge-post">POST</span>
+      <div class="endpoint-title">/api/kafka/send-fail &nbsp;— Trigger retry + DLT flow</div>
+      <span class="chevron">&#8964;</span>
+    </div>
+    <div class="endpoint-body">
+      <p>Publishes an event with <code>action = "fail"</code>. The consumer deliberately throws a <code>RuntimeException</code>, causing Spring Kafka to retry 3 times then route the message to the dead-letter topic.</p>
+
+      <div class="code-label">Request (no body needed)</div>
+      <div class="code-block">
+        <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+        POST http://localhost:8080/api/kafka/send-fail
+Authorization: Bearer &lt;token&gt;
+      </div>
+
+      <div class="response-box">
+        <div class="label">Expected Response — 200 OK</div>
+        <div class="code-block" style="background:#1e293b; margin:0;">{
+  "status": "sent",
+  "note": "consumer will fail → watch retry topics → DLT"
+}</div>
+      </div>
+
+      <div class="note">
+        <strong>What to watch in the app logs</strong>
+        You should see 3 retry attempts logged, followed by the message appearing on <code>user-events.DLT</code> and the <code>handleDlt</code> consumer logging it.
+      </div>
+
+      <div class="flow">
+        <div class="flow-box">POST /send-fail</div>
+        <span class="flow-arrow">&#8594;</span>
+        <div class="flow-box">action="fail" published</div>
+        <span class="flow-arrow">&#8594;</span>
+        <div class="flow-box">Consumer throws</div>
+        <span class="flow-arrow">&#8594;</span>
+        <div class="flow-box">Retry x3</div>
+        <span class="flow-arrow">&#8594;</span>
+        <div class="flow-box">user-events.DLT</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- /api/kafka/send-batch -->
+  <div class="endpoint" id="ep-batch">
+    <div class="endpoint-header" onclick="toggle('ep-batch')">
+      <span class="badge badge-post">POST</span>
+      <div class="endpoint-title">/api/kafka/send-batch &nbsp;— Send multiple events</div>
+      <span class="chevron">&#8964;</span>
+    </div>
+    <div class="endpoint-body">
+      <p>Publishes a list of events in sequence. Demonstrates Kafka's strength for high-throughput writes.</p>
+
+      <div class="code-label">Request</div>
+      <div class="code-block">
+        <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+        POST http://localhost:8080/api/kafka/send-batch
+Authorization: Bearer &lt;token&gt;
+Content-Type: application/json
+
+[
+  { "action": "login" },
+  { "action": "view-dashboard" },
+  { "action": "logout" }
+]
+      </div>
+
+      <div class="response-box">
+        <div class="label">Expected Response — 200 OK</div>
+        <div class="code-block" style="background:#1e293b; margin:0;">{
+  "status": "sent",
+  "count": 3,
+  "key": "alice"
+}</div>
+      </div>
+
+      <div class="note">
+        <strong>Tip</strong>
+        You can send as many items as you like in the array. Each item with no <code>action</code> field defaults to <code>"batch"</code>.
+      </div>
+    </div>
+  </div>
+
+  <!-- /api/kafka/send-partition -->
+  <div class="endpoint" id="ep-partition">
+    <div class="endpoint-header" onclick="toggle('ep-partition')">
+      <span class="badge badge-post">POST</span>
+      <div class="endpoint-title">/api/kafka/send-partition &nbsp;— Send to a specific partition</div>
+      <span class="chevron">&#8964;</span>
+    </div>
+    <div class="endpoint-body">
+      <p>Publishes directly to a named partition (0, 1, or 2). Useful for testing partition-level ordering.</p>
+
+      <div class="code-label">Request</div>
+      <div class="code-block">
+        <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+        POST http://localhost:8080/api/kafka/send-partition
+Authorization: Bearer &lt;token&gt;
+Content-Type: application/json
+
+{ "action": "test", "partition": "1" }
+      </div>
+
+      <p>Valid partition values: <code>"0"</code>, <code>"1"</code>, <code>"2"</code> (topic has 3 partitions).</p>
+
+      <div class="response-box">
+        <div class="label">Expected Response — 200 OK</div>
+        <div class="code-block" style="background:#1e293b; margin:0;">{
+  "status": "sent",
+  "partition": "1",
+  "key": "alice"
+}</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── ERROR REFERENCE ── -->
+  <div class="section-title">Common Errors</div>
+
+  <div class="step open" id="step-errors">
+    <div class="step-header" onclick="toggle('step-errors')">
+      <div class="step-number">!</div>
+      <div class="step-title">Error reference</div>
+      <span class="chevron">&#8964;</span>
+    </div>
+    <div class="step-body">
+      <table class="kv-table">
+        <thead><tr><th>Status</th><th>Cause</th><th>Fix</th></tr></thead>
+        <tbody>
+          <tr>
+            <td><code>401 Unauthorized</code></td>
+            <td>Missing or expired Bearer token</td>
+            <td>Re-run Step 1 to get a fresh token, paste it in Authorization</td>
+          </tr>
+          <tr>
+            <td><code>403 Forbidden</code></td>
+            <td>Token valid but user lacks required role</td>
+            <td>Ensure your Keycloak user has the correct realm/client roles assigned</td>
+          </tr>
+          <tr>
+            <td><code>400 Bad Request</code></td>
+            <td>Malformed JSON body or wrong Content-Type</td>
+            <td>Set Content-Type to <code>application/json</code> and verify JSON syntax</td>
+          </tr>
+          <tr>
+            <td><code>500 Internal Server Error</code></td>
+            <td>Kafka broker not running</td>
+            <td>Start Kafka on <code>localhost:9092</code> before testing</td>
+          </tr>
+          <tr>
+            <td>Connection refused</td>
+            <td>Spring Boot app not running</td>
+            <td>Start the app with <code>mvn spring-boot:run</code></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ── QUICK REFERENCE ── -->
+  <div class="section-title">Quick Reference</div>
+  <table class="kv-table" style="background:white; border-radius:12px; box-shadow:0 1px 6px rgba(0,0,0,0.08); overflow:hidden;">
+    <thead><tr><th>Method</th><th>Endpoint</th><th>Auth</th><th>Body</th></tr></thead>
+    <tbody>
+      <tr>
+        <td><span class="badge badge-get">GET</span></td>
+        <td><code>/api/kafka/info</code></td>
+        <td>Bearer JWT</td>
+        <td>—</td>
+      </tr>
+      <tr>
+        <td><span class="badge badge-post">POST</span></td>
+        <td><code>/api/kafka/send</code></td>
+        <td>Bearer JWT</td>
+        <td><code>{"action":"login"}</code></td>
+      </tr>
+      <tr>
+        <td><span class="badge badge-post">POST</span></td>
+        <td><code>/api/kafka/send-fail</code></td>
+        <td>Bearer JWT</td>
+        <td>—</td>
+      </tr>
+      <tr>
+        <td><span class="badge badge-post">POST</span></td>
+        <td><code>/api/kafka/send-batch</code></td>
+        <td>Bearer JWT</td>
+        <td><code>[{"action":"login"},...]</code></td>
+      </tr>
+      <tr>
+        <td><span class="badge badge-post">POST</span></td>
+        <td><code>/api/kafka/send-partition</code></td>
+        <td>Bearer JWT</td>
+        <td><code>{"action":"test","partition":"1"}</code></td>
+      </tr>
+    </tbody>
+  </table>
+
+</main>
+
+<script>
+  function toggle(id) {
+    const el = document.getElementById(id);
+    el.classList.toggle('open');
+  }
+
+  function copyCode(btn) {
+    const block = btn.closest('.code-block');
+    const text = block.innerText.replace('Copy', '').replace('Copied!', '').trim();
+    navigator.clipboard.writeText(text).then(() => {
+      btn.textContent = 'Copied!';
+      btn.classList.add('copied');
+      setTimeout(() => { btn.textContent = 'Copy'; btn.classList.remove('copied'); }, 2000);
+    });
+  }
+</script>
+
+</body>
+</html>
