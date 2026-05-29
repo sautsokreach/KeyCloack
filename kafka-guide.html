@@ -1,0 +1,1107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Kafka — Learn &amp; Test Guide</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: 'Segoe UI', system-ui, sans-serif;
+  background: #0f1117;
+  color: #e2e8f0;
+  min-height: 100vh;
+  padding: 32px 20px 80px;
+}
+
+h1 {
+  text-align: center;
+  font-size: 1.8rem;
+  font-weight: 800;
+  margin-bottom: 6px;
+  background: linear-gradient(90deg, #f97316, #facc15, #4ade80);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.subtitle {
+  text-align: center;
+  color: #64748b;
+  font-size: 0.85rem;
+  margin-bottom: 36px;
+}
+
+/* ── TABS ── */
+.tabs {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+  margin-bottom: 36px;
+  flex-wrap: wrap;
+}
+.tab-btn {
+  padding: 9px 20px;
+  border-radius: 999px;
+  border: 2px solid #334155;
+  background: transparent;
+  color: #94a3b8;
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-family: inherit;
+}
+.tab-btn:hover { border-color: #64748b; color: #e2e8f0; }
+.tab-btn.active-orange { background: #92400e; border-color: #f97316; color: #fff; }
+.tab-btn.active-blue   { background: #1e3a8a; border-color: #3b82f6; color: #fff; }
+.tab-btn.active-green  { background: #064e3b; border-color: #10b981; color: #fff; }
+.tab-btn.active-purple { background: #4c1d95; border-color: #8b5cf6; color: #fff; }
+
+.tab-panel { display: none; }
+.tab-panel.active { display: block; }
+
+/* ── SHARED ── */
+.wrap { max-width: 900px; margin: 0 auto; }
+
+.section-label {
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: #475569;
+  text-align: center;
+  margin-bottom: 20px;
+}
+
+/* ── STEP CARDS ── */
+.step {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  padding: 10px 0;
+}
+.step-num {
+  width: 28px; height: 28px;
+  border-radius: 50%;
+  font-size: 0.72rem; font-weight: 800;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+}
+.step-body {
+  flex: 1;
+  background: #1e293b;
+  border-radius: 10px;
+  padding: 13px 16px;
+  border-left: 3px solid;
+}
+.step-header {
+  display: flex; align-items: center; flex-wrap: wrap; gap: 6px; margin-bottom: 6px;
+}
+.step-action { font-family: monospace; font-size: 0.8rem; color: #e2e8f0; }
+.step-action .method { color: #4ade80; font-weight: 700; }
+.step-action .url    { color: #60a5fa; }
+.step-action .code   { color: #f97316; }
+.step-desc { font-size: 0.78rem; color: #94a3b8; margin-top: 5px; line-height: 1.6; }
+.step-snippet {
+  margin-top: 10px;
+  background: #0f1117;
+  border-radius: 8px;
+  padding: 10px 14px;
+  font-family: monospace;
+  font-size: 0.72rem;
+  color: #86efac;
+  line-height: 1.7;
+  overflow-x: auto;
+  white-space: pre;
+  position: relative;
+}
+.step-snippet .dim    { color: #475569; }
+.step-snippet .blue   { color: #60a5fa; }
+.step-snippet .orange { color: #f97316; }
+.step-snippet .yellow { color: #facc15; }
+.step-snippet .red    { color: #f87171; }
+.step-snippet .purple { color: #c084fc; }
+.step-snippet .green  { color: #4ade80; }
+
+.copy-btn {
+  position: absolute; top: 8px; right: 10px;
+  background: #334155; border: none; color: #94a3b8;
+  border-radius: 5px; padding: 3px 9px; font-size: 0.65rem;
+  cursor: pointer; font-family: inherit; transition: all 0.15s;
+}
+.copy-btn:hover { background: #475569; color: #e2e8f0; }
+.copy-btn.copied { background: #064e3b; color: #4ade80; }
+
+/* step colour themes */
+.step-orange .step-num { background: #b45309; color: #fff; }
+.step-orange .step-body { border-color: #f97316; }
+.step-blue   .step-num { background: #1d4ed8; color: #fff; }
+.step-blue   .step-body { border-color: #3b82f6; }
+.step-green  .step-num { background: #15803d; color: #fff; }
+.step-green  .step-body { border-color: #22c55e; }
+.step-purple .step-num { background: #6d28d9; color: #fff; }
+.step-purple .step-body { border-color: #8b5cf6; }
+.step-red    .step-num { background: #b91c1c; color: #fff; }
+.step-red    .step-body { border-color: #ef4444; }
+.step-teal   .step-num { background: #0f766e; color: #fff; }
+.step-teal   .step-body { border-color: #14b8a6; }
+.step-yellow .step-num { background: #92400e; color: #fff; }
+.step-yellow .step-body { border-color: #facc15; }
+
+/* ── FROM/TO BADGES ── */
+.from-badge, .to-badge {
+  padding: 2px 10px; border-radius: 20px;
+  font-size: 0.68rem; font-weight: 700;
+  text-transform: uppercase; letter-spacing: 0.04em;
+}
+.badge-client  { background: rgba(71,85,105,.4);   color: #94a3b8;  border: 1px solid #475569; }
+.badge-ctrl    { background: rgba(249,115,22,.15);  color: #fb923c;  border: 1px solid #c2410c; }
+.badge-pub     { background: rgba(250,204,21,.12);  color: #facc15;  border: 1px solid #92400e; }
+.badge-kafka   { background: rgba(34,197,94,.15);   color: #4ade80;  border: 1px solid #15803d; }
+.badge-cons    { background: rgba(139,92,246,.2);   color: #a78bfa;  border: 1px solid #6d28d9; }
+.badge-dlt     { background: rgba(239,68,68,.15);   color: #f87171;  border: 1px solid #b91c1c; }
+.arrow-icon { font-size: 0.75rem; color: #64748b; }
+
+/* ── NOTE BOX ── */
+.note-box {
+  background: #172554; border: 1px solid #1e40af;
+  border-radius: 10px; padding: 14px 18px;
+  font-size: 0.8rem; color: #93c5fd; line-height: 1.6;
+  margin-top: 20px;
+}
+.note-box strong { color: #bfdbfe; }
+.note-orange { background: #1c1008; border-color: #92400e; color: #fcd34d; }
+.note-orange strong { color: #fef3c7; }
+.note-green { background: #052e16; border-color: #16a34a; color: #86efac; }
+.note-green strong { color: #bbf7d0; }
+.note-red { background: #1c0505; border-color: #7f1d1d; color: #fca5a5; }
+.note-red strong { color: #fecaca; }
+
+/* ── DIVIDER ── */
+hr.divider { border: none; border-top: 1px solid #1e293b; margin: 28px 0; }
+
+/* ── CONNECTOR ARROWS (flow tab) ── */
+.flow-wrap {
+  display: flex; flex-direction: column; align-items: center; gap: 0;
+}
+.f-box {
+  border-radius: 10px; padding: 13px 22px;
+  text-align: center; min-width: 260px; max-width: 380px;
+  font-size: 0.8rem; font-weight: 600; line-height: 1.5;
+  box-shadow: 0 2px 10px rgba(0,0,0,.3);
+  position: relative;
+}
+.f-box .lbl { font-size: 0.62rem; font-weight: 400; opacity: .7; display: block; margin-bottom: 3px; text-transform: uppercase; letter-spacing: .5px; }
+.f-box .nm  { font-size: 0.82rem; }
+.f-badge { display: inline-block; font-size: 0.65rem; background: rgba(255,255,255,.18); border-radius: 4px; padding: 1px 7px; margin-top: 4px; }
+
+.f-client    { background: #1e3a5f; border: 2px solid #3b82f6; color: #93c5fd; }
+.f-ctrl      { background: #431407; border: 2px solid #f97316; color: #fed7aa; }
+.f-pub       { background: #422006; border: 2px solid #facc15; color: #fef08a; }
+.f-broker    { background: #052e16; border: 2px solid #22c55e; color: #86efac; }
+.f-partition { background: #064e3b; border: 2px dashed #10b981; color: #6ee7b7; }
+.f-consumer  { background: #2e1065; border: 2px solid #8b5cf6; color: #ddd6fe; }
+.f-retry     { background: #2c1810; border: 2px dashed #fb923c; color: #fed7aa; }
+.f-dlt       { background: #3b0101; border: 2px solid #ef4444; color: #fca5a5; }
+
+.f-arrow { width: 2px; height: 32px; background: #334155; position: relative; margin: 0 auto; }
+.f-arrow::after {
+  content: ''; position: absolute; bottom: -6px; left: -5px;
+  border-left: 6px solid transparent; border-right: 6px solid transparent;
+  border-top: 8px solid #334155;
+}
+.f-arrow-fail { background: #f97316; }
+.f-arrow-fail::after { border-top-color: #f97316; }
+.f-arrow-dlt { background: #ef4444; }
+.f-arrow-dlt::after { border-top-color: #ef4444; }
+
+.f-label { font-size: 0.68rem; color: #64748b; text-align: center; margin: 3px 0; }
+.f-label-fail { color: #f97316; }
+.f-label-dlt  { color: #ef4444; }
+
+/* two-column branch */
+.f-branch { display: flex; justify-content: center; align-items: flex-start; gap: 60px; margin-top: 0; }
+.f-col { display: flex; flex-direction: column; align-items: center; }
+.f-branch-label {
+  font-size: 0.65rem; font-weight: 700; letter-spacing: .08em;
+  text-transform: uppercase; margin-bottom: 10px;
+  padding: 3px 12px; border-radius: 20px;
+}
+.branch-ok  { background: rgba(34,197,94,.15); color: #4ade80; border: 1px solid #15803d; }
+.branch-err { background: rgba(239,68,68,.12); color: #f87171; border: 1px solid #991b1b; }
+
+/* ── CONCEPTS ── */
+.concept-grid {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 16px;
+  margin-top: 8px;
+}
+@media (max-width: 620px) { .concept-grid { grid-template-columns: 1fr; } }
+
+.concept-card {
+  background: #1e293b; border-radius: 12px; padding: 18px 20px;
+  border-top: 3px solid;
+}
+.concept-card h3 { font-size: 0.85rem; margin-bottom: 8px; }
+.concept-card p  { font-size: 0.78rem; color: #94a3b8; line-height: 1.6; }
+.concept-card code { background: #0f1117; border-radius: 4px; padding: 1px 6px; font-size: 0.75rem; }
+
+.c-orange { border-color: #f97316; }
+.c-orange h3 { color: #fb923c; }
+.c-green  { border-color: #22c55e; }
+.c-green  h3 { color: #4ade80; }
+.c-blue   { border-color: #3b82f6; }
+.c-blue   h3 { color: #60a5fa; }
+.c-purple { border-color: #8b5cf6; }
+.c-purple h3 { color: #a78bfa; }
+.c-yellow { border-color: #facc15; }
+.c-yellow h3 { color: #fde047; }
+.c-red    { border-color: #ef4444; }
+.c-red    h3 { color: #f87171; }
+
+/* Partition visualiser */
+.partition-vis {
+  display: flex; gap: 12px; justify-content: center;
+  margin: 20px 0; flex-wrap: wrap;
+}
+.p-col { display: flex; flex-direction: column; align-items: center; gap: 0; }
+.p-header {
+  background: #0f4c75; color: #93c5fd; border-radius: 8px 8px 0 0;
+  font-size: 0.68rem; font-weight: 700; padding: 6px 18px; width: 130px; text-align: center;
+}
+.p-slot {
+  width: 130px; padding: 5px 8px;
+  border: 1px solid #1e3a5f; border-top: none;
+  font-size: 0.65rem; font-family: monospace; color: #64748b;
+  display: flex; justify-content: space-between;
+  background: #0f1117;
+}
+.p-slot.new { background: #052e16; color: #4ade80; border-color: #15803d; }
+.p-slot .off { color: #475569; }
+.p-footer {
+  background: #1e293b; border-radius: 0 0 8px 8px;
+  font-size: 0.6rem; color: #475569; padding: 5px 8px; width: 130px; text-align: center;
+  border: 1px solid #1e3a5f; border-top: none;
+}
+
+/* ── VS TABLE ── */
+.vs-table { width: 100%; border-collapse: collapse; font-size: 0.8rem; }
+.vs-table th, .vs-table td { padding: 11px 14px; border-top: 1px solid #1e293b; }
+.vs-table thead tr { background: #1a1a2e; }
+.vs-table th { font-size: 0.72rem; text-transform: uppercase; letter-spacing: .06em; }
+.vs-table th:nth-child(1) { color: #94a3b8; }
+.vs-table th:nth-child(2) { color: #4ade80; }
+.vs-table th:nth-child(3) { color: #fb923c; }
+.vs-table td:nth-child(1) { color: #94a3b8; font-weight: 600; width: 26%; }
+.vs-table td:nth-child(2) { color: #86efac; width: 37%; }
+.vs-table td:nth-child(3) { color: #fed7aa; width: 37%; }
+.vs-table tr:hover td { background: rgba(255,255,255,.02); }
+
+/* ── ENDPOINT TABLE ── */
+.endpoint-table { width: 100%; border-collapse: collapse; font-size: 0.78rem; margin-top: 8px; }
+.endpoint-table thead tr { background: #1e293b; }
+.endpoint-table th { padding: 10px 14px; text-align: left; color: #64748b; font-size: 0.68rem; text-transform: uppercase; letter-spacing: .06em; }
+.endpoint-table td { padding: 10px 14px; border-top: 1px solid #1e293b; vertical-align: top; }
+.endpoint-table tr:hover td { background: rgba(255,255,255,.02); }
+.m-post { color: #fb923c; font-weight: 700; font-family: monospace; }
+.m-get  { color: #4ade80; font-weight: 700; font-family: monospace; }
+.path   { font-family: monospace; color: #93c5fd; }
+
+/* Log block */
+.log-block {
+  background: #0a0e1a; border: 1px solid #1e293b; border-radius: 8px;
+  padding: 12px 14px; font-family: monospace; font-size: 0.7rem;
+  line-height: 1.7; color: #64748b; overflow-x: auto; white-space: pre;
+  margin-top: 10px;
+}
+.log-block .ts   { color: #334155; }
+.log-block .lvl  { color: #4ade80; }
+.log-block .lvlw { color: #facc15; }
+.log-block .key  { color: #60a5fa; }
+.log-block .val  { color: #f97316; }
+.log-block .hi   { color: #e2e8f0; }
+
+footer {
+  text-align: center; color: #334155; font-size: 0.72rem; margin-top: 56px;
+}
+
+/* scroll tip */
+.scroll-hint { color: #334155; font-size: 0.68rem; text-align: center; margin-bottom: 8px; }
+</style>
+</head>
+<body>
+
+<h1>Apache Kafka — Learn &amp; Test</h1>
+<p class="subtitle">keycloak-spring-demo · kafka:9092 · topic: user-events · consumer-group: demo-group</p>
+
+<!-- ── TABS ── -->
+<div class="tabs">
+  <button class="tab-btn active-orange" onclick="switchTab('flow',    this,'active-orange')">Message Flow</button>
+  <button class="tab-btn"               onclick="switchTab('test',    this,'active-blue'  )">Step-by-Step Test</button>
+  <button class="tab-btn"               onclick="switchTab('concepts',this,'active-green' )">Kafka Concepts</button>
+  <button class="tab-btn"               onclick="switchTab('vs',      this,'active-purple')">Kafka vs RabbitMQ</button>
+</div>
+
+
+<!-- ════════════════════════════════════════
+     TAB 1 — MESSAGE FLOW
+     ════════════════════════════════════════ -->
+<div id="tab-flow" class="tab-panel active">
+<div class="wrap">
+
+  <p class="section-label">Happy Path → then Failure / Retry / DLT</p>
+
+  <div class="flow-wrap">
+
+    <!-- 1. API Client -->
+    <div class="f-box f-client">
+      <span class="lbl">HTTP Client (curl / Postman)</span>
+      <span class="nm">POST /api/kafka/send</span>
+      <span class="f-badge">Authorization: Bearer &lt;JWT&gt;</span>
+    </div>
+
+    <div class="f-arrow"></div>
+    <div class="f-label">JWT validated by Spring Security (local RSA check)</div>
+    <div class="f-arrow" style="height:10px;"></div>
+
+    <!-- 2. Controller -->
+    <div class="f-box f-ctrl">
+      <span class="lbl">REST Controller</span>
+      <span class="nm">KafkaController</span>
+      <span class="f-badge">extracts username from Jwt claim</span>
+    </div>
+
+    <div class="f-arrow"></div>
+    <div class="f-label">publishUserEvent(username, action)</div>
+    <div class="f-arrow" style="height:10px;"></div>
+
+    <!-- 3. Publisher -->
+    <div class="f-box f-pub">
+      <span class="lbl">@Service</span>
+      <span class="nm">KafkaMessagePublisher</span>
+      <span class="f-badge">kafkaTemplate.send(topic, key=username, event)</span>
+    </div>
+
+    <div class="f-arrow"></div>
+    <div class="f-label">key hash → partition selection (hash(username) % 3)</div>
+    <div class="f-arrow" style="height:10px;"></div>
+
+    <!-- 4. Kafka Broker -->
+    <div class="f-box f-broker">
+      <span class="lbl">Kafka Broker (KRaft, port 9092)</span>
+      <span class="nm">Topic: user-events</span>
+      <span class="f-badge">3 partitions · replication factor 1</span>
+    </div>
+
+    <div class="f-arrow"></div>
+    <div class="f-label">message appended to partition log at next offset</div>
+    <div class="f-arrow" style="height:10px;"></div>
+
+    <!-- 5. Partition -->
+    <div class="f-box f-partition">
+      <span class="lbl">Partition (0, 1, or 2) — immutable log</span>
+      <span class="nm">offset N: {username, action, timestamp}</span>
+      <span class="f-badge">stored on disk · retained even after consumption</span>
+    </div>
+
+    <div class="f-arrow"></div>
+    <div class="f-label">consumer polls &amp; commits offset after processing</div>
+    <div class="f-arrow" style="height:10px;"></div>
+
+    <!-- 6. Consumer -->
+    <div class="f-box f-consumer">
+      <span class="lbl">@KafkaListener · group-id: demo-group</span>
+      <span class="nm">KafkaMessageConsumer</span>
+      <span class="f-badge">handleUserEvent(ConsumerRecord)</span>
+    </div>
+
+  </div>
+
+  <!-- Branch: OK vs FAIL -->
+  <div style="margin-top:28px;">
+    <div class="f-branch">
+
+      <!-- Happy path -->
+      <div class="f-col">
+        <span class="f-branch-label branch-ok">action ≠ "fail"</span>
+        <div class="f-arrow"></div>
+        <div class="f-label" style="color:#4ade80;">log info · offset committed</div>
+        <div class="f-arrow" style="height:10px;background:#22c55e;"></div>
+        <div class="f-box f-broker" style="min-width:200px;max-width:240px;background:#052e16;border-color:#22c55e;">
+          <span class="lbl">Done</span>
+          <span class="nm">Processed successfully</span>
+          <span class="f-badge">consumer moves to offset N+1</span>
+        </div>
+      </div>
+
+      <!-- Failure path -->
+      <div class="f-col">
+        <span class="f-branch-label branch-err">action = "fail"</span>
+        <div class="f-arrow f-arrow-fail"></div>
+        <div class="f-label f-label-fail">throws RuntimeException</div>
+        <div class="f-arrow f-arrow-fail" style="height:10px;"></div>
+        <div class="f-box f-retry" style="min-width:200px;max-width:260px;">
+          <span class="lbl">@RetryableTopic (Spring Kafka)</span>
+          <span class="nm">Retry Topics × 3</span>
+          <span class="f-badge">user-events-0, user-events-1 (3s → 6s delay)</span>
+        </div>
+        <div class="f-arrow f-arrow-dlt"></div>
+        <div class="f-label f-label-dlt">all retries exhausted</div>
+        <div class="f-arrow f-arrow-dlt" style="height:10px;"></div>
+        <div class="f-box f-dlt" style="min-width:200px;max-width:240px;">
+          <span class="lbl">Dead Letter Topic</span>
+          <span class="nm">user-events.DLT</span>
+          <span class="f-badge">@DltHandler logs &amp; parks message</span>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <div class="note-box" style="margin-top:28px;">
+    <strong>Key difference from RabbitMQ:</strong> Kafka retries use <em>separate retry topics</em>
+    (<code>user-events-0</code>, <code>user-events-1</code>) so the main topic is never paused
+    or blocked. RabbitMQ nacks the message and puts it back in the same queue, which can stall
+    other messages behind it if retries keep failing.<br/><br/>
+    <strong>Offset commit:</strong> if the consumer crashes mid-processing, Kafka replays from
+    the last committed offset. RabbitMQ uses an ack/nack model instead.
+  </div>
+
+  <hr class="divider"/>
+
+  <!-- Endpoint reference -->
+  <p class="section-label" style="margin-top:24px;">REST Endpoints</p>
+  <table class="endpoint-table">
+    <thead><tr>
+      <th>Method</th><th>Endpoint</th><th>What it demonstrates</th>
+    </tr></thead>
+    <tbody>
+      <tr>
+        <td class="m-post">POST</td>
+        <td class="path">/api/kafka/send</td>
+        <td>Basic publish — key=username routes to a consistent partition</td>
+      </tr>
+      <tr>
+        <td class="m-post">POST</td>
+        <td class="path">/api/kafka/send-fail</td>
+        <td>Triggers consumer failure → watch retry topics → DLT in logs</td>
+      </tr>
+      <tr>
+        <td class="m-post">POST</td>
+        <td class="path">/api/kafka/send-batch</td>
+        <td>High-throughput sequential publish of multiple events</td>
+      </tr>
+      <tr>
+        <td class="m-post">POST</td>
+        <td class="path">/api/kafka/send-partition</td>
+        <td>Explicit partition targeting (bypasses key-based routing)</td>
+      </tr>
+      <tr>
+        <td class="m-get">GET</td>
+        <td class="path">/api/kafka/info</td>
+        <td>Topic config, concept cheat-sheet, comparison with RabbitMQ</td>
+      </tr>
+    </tbody>
+  </table>
+
+</div>
+</div>
+
+
+<!-- ════════════════════════════════════════
+     TAB 2 — STEP-BY-STEP TEST
+     ════════════════════════════════════════ -->
+<div id="tab-test" class="tab-panel">
+<div class="wrap">
+
+  <p class="section-label">Follow these steps in order — each one teaches a new concept</p>
+
+  <!-- PHASE 1 -->
+  <p class="section-label" style="color:#f97316;">Phase 1 — Start the stack</p>
+
+  <div class="step step-orange">
+    <div class="step-num">1</div>
+    <div class="step-body">
+      <div class="step-action">Start Kafka (if not already running)</div>
+      <div class="step-desc">Kafka runs in KRaft mode (no Zookeeper). It will auto-create the topics declared in <code>KafkaConfig.java</code> when the Spring app connects.</div>
+      <div class="step-snippet"><button class="copy-btn" onclick="copySnippet(this)">copy</button><span class="dim"># from the project root</span>
+docker compose up -d kafka
+
+<span class="dim"># confirm it's healthy</span>
+docker logs kafka --tail 5</div>
+    </div>
+  </div>
+
+  <div class="step step-orange">
+    <div class="step-num">2</div>
+    <div class="step-body">
+      <div class="step-action">Start the Spring Boot app</div>
+      <div class="step-desc">Watch the startup logs — Spring Kafka will create the <code>user-events</code> topic (3 partitions) and <code>user-events.DLT</code> topic, then the consumer will join the group.</div>
+      <div class="step-snippet"><button class="copy-btn" onclick="copySnippet(this)">copy</button>mvn spring-boot:run
+
+<span class="dim"># expected log lines on startup:</span>
+<span class="green">INFO</span>  <span class="hi">AdminClientConfig</span>  - <span class="blue">Creating topic user-events (partitions=3)</span>
+<span class="green">INFO</span>  <span class="hi">KafkaListenerEndpointRegistry</span>  - <span class="blue">Starting Consumer group=demo-group</span>
+<span class="green">INFO</span>  <span class="hi">AbstractCoordinator</span>  - <span class="blue">[demo-group] Joined group, generation 1</span></div>
+    </div>
+  </div>
+
+  <hr class="divider"/>
+
+  <!-- PHASE 2 -->
+  <p class="section-label" style="color:#3b82f6;">Phase 2 — Get a JWT token</p>
+
+  <div class="step step-blue">
+    <div class="step-num">3</div>
+    <div class="step-body">
+      <div class="step-action">Fetch a JWT from Keycloak (password grant)</div>
+      <div class="step-desc">All Kafka endpoints require a valid JWT. Store the token in <code>$TOKEN</code> so the next steps can reuse it.</div>
+      <div class="step-snippet"><button class="copy-btn" onclick="copySnippet(this)">copy</button>TOKEN=$(curl -s -X POST \
+  http://52.65.212.193:8180/realms/demo-realm/protocol/openid-connect/token \
+  -d "grant_type=password" \
+  -d "client_id=spring-demo-client" \
+  -d "client_secret=super-secret-client-key" \
+  -d "username=YOUR_USERNAME" \
+  -d "password=YOUR_PASSWORD" \
+  | python3 -c "import sys,json; print(json.load(sys.stdin)['access_token'])")
+
+echo "Token: ${TOKEN:0:40}..."</div>
+    </div>
+  </div>
+
+  <hr class="divider"/>
+
+  <!-- PHASE 3 -->
+  <p class="section-label" style="color:#22c55e;">Phase 3 — Basic publish &amp; consume</p>
+
+  <div class="step step-green">
+    <div class="step-num">4</div>
+    <div class="step-body">
+      <div class="step-action">GET /api/kafka/info — understand the setup</div>
+      <div class="step-desc">Before sending any messages, read the info endpoint. It returns a live cheat-sheet of Kafka concepts and your current config.</div>
+      <div class="step-snippet"><button class="copy-btn" onclick="copySnippet(this)">copy</button>curl -s http://localhost:8080/api/kafka/info \
+  -H "Authorization: Bearer $TOKEN" | python3 -m json.tool</div>
+      <div class="log-block"><span class="ts">Response:</span>
+{
+  <span class="key">"topic"</span>: <span class="val">"user-events"</span>,
+  <span class="key">"partitions"</span>: <span class="val">3</span>,
+  <span class="key">"consumerGroup"</span>: <span class="val">"demo-group"</span>,
+  <span class="key">"concept"</span>: {
+    <span class="key">"key-routing"</span>: <span class="val">"same key → same partition → ordered delivery per user"</span>,
+    <span class="key">"offset"</span>: <span class="val">"position in partition log — consumers track where they left off"</span>,
+    <span class="key">"vs-rabbitmq"</span>: <span class="val">"Kafka retains messages after consumption (replay possible)"</span>
+  }
+}</div>
+    </div>
+  </div>
+
+  <div class="step step-green">
+    <div class="step-num">5</div>
+    <div class="step-body">
+      <div class="step-action">POST /api/kafka/send — publish your first message</div>
+      <div class="step-desc">The message key is your username. This determines which partition receives the message. Watch the app logs to see the partition number and offset printed by the consumer.</div>
+      <div class="step-snippet"><button class="copy-btn" onclick="copySnippet(this)">copy</button>curl -s -X POST http://localhost:8080/api/kafka/send \
+  -H "Authorization: Bearer $TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"action": "login"}' | python3 -m json.tool</div>
+      <div class="log-block"><span class="ts">--- Publisher log ---</span>
+<span class="lvl">INFO</span>  KafkaMessagePublisher  - <span class="hi">Kafka event published</span>
+  <span class="key">→ topic=</span><span class="val">user-events</span>  <span class="key">partition=</span><span class="val">1</span>  <span class="key">offset=</span><span class="val">0</span>  <span class="key">key=</span><span class="val">alice</span>
+
+<span class="ts">--- Consumer log (few ms later) ---</span>
+<span class="lvl">INFO</span>  KafkaMessageConsumer  - <span class="hi">Kafka received</span>
+  <span class="key">→ topic=</span><span class="val">user-events</span>  <span class="key">partition=</span><span class="val">1</span>  <span class="key">offset=</span><span class="val">0</span>  <span class="key">key=</span><span class="val">alice</span>
+<span class="lvl">INFO</span>  KafkaMessageConsumer  -   <span class="key">event:</span> user=<span class="val">alice</span>  action=<span class="val">login</span>
+<span class="lvl">INFO</span>  KafkaMessageConsumer  -   <span class="hi">Processed successfully.</span></div>
+      <div class="step-desc" style="margin-top:8px;">
+        <strong style="color:#e2e8f0;">What to notice:</strong> the <code>partition</code> and <code>offset</code> values in the log.
+        Send the same request again — the partition will be the same (same key = same partition),
+        and the offset increments by 1 each time.
+      </div>
+    </div>
+  </div>
+
+  <div class="step step-green">
+    <div class="step-num">6</div>
+    <div class="step-body">
+      <div class="step-action">Send several messages and watch offsets grow</div>
+      <div class="step-desc">Run this loop to publish 5 messages quickly. Watch the offset climb: 0 → 1 → 2 → 3 → 4. Each message gets the next slot in the partition log.</div>
+      <div class="step-snippet"><button class="copy-btn" onclick="copySnippet(this)">copy</button>for i in 1 2 3 4 5; do
+  curl -s -X POST http://localhost:8080/api/kafka/send \
+    -H "Authorization: Bearer $TOKEN" \
+    -H "Content-Type: application/json" \
+    -d "{\"action\": \"event-$i\"}" > /dev/null
+  echo "Sent event-$i"
+done</div>
+    </div>
+  </div>
+
+  <hr class="divider"/>
+
+  <!-- PHASE 4 -->
+  <p class="section-label" style="color:#facc15;">Phase 4 — Retry &amp; Dead Letter Topic</p>
+
+  <div class="step step-yellow">
+    <div class="step-num">7</div>
+    <div class="step-body">
+      <div class="step-action">POST /api/kafka/send-fail — trigger the retry + DLT flow</div>
+      <div class="step-desc">The consumer throws <code>RuntimeException</code> for action="fail". Spring Kafka's <code>@RetryableTopic</code> catches this and routes the message through retry topics before parking it in the DLT. Watch ~15–20 seconds of log output.</div>
+      <div class="step-snippet"><button class="copy-btn" onclick="copySnippet(this)">copy</button>curl -s -X POST http://localhost:8080/api/kafka/send-fail \
+  -H "Authorization: Bearer $TOKEN" | python3 -m json.tool</div>
+      <div class="log-block"><span class="ts">--- Attempt 1 (immediate) ---</span>
+<span class="lvl">INFO</span>   KafkaMessageConsumer  - Kafka received → topic=<span class="val">user-events</span> offset=<span class="val">5</span>
+<span class="lvlw">ERROR</span>  KafkaMessageConsumer  - <span class="red">Simulated failure for action=fail</span>
+
+<span class="ts">--- Retry 1 (3s later, separate topic) ---</span>
+<span class="lvl">INFO</span>   KafkaMessageConsumer  - Kafka received → topic=<span class="val">user-events-0</span> offset=<span class="val">0</span>
+<span class="lvlw">ERROR</span>  KafkaMessageConsumer  - <span class="red">Simulated failure for action=fail</span>
+
+<span class="ts">--- Retry 2 (6s later) ---</span>
+<span class="lvl">INFO</span>   KafkaMessageConsumer  - Kafka received → topic=<span class="val">user-events-1</span> offset=<span class="val">0</span>
+<span class="lvlw">ERROR</span>  KafkaMessageConsumer  - <span class="red">Simulated failure for action=fail</span>
+
+<span class="ts">--- DLT (all retries exhausted) ---</span>
+<span class="lvlw">WARN</span>   KafkaMessageConsumer  - <span class="yellow">DLT received (all retries exhausted)</span>
+<span class="lvlw">WARN</span>   KafkaMessageConsumer  -   DLT event: user=<span class="val">alice</span>  action=<span class="val">fail</span></div>
+      <div class="step-desc" style="margin-top:8px;">
+        <strong style="color:#e2e8f0;">Key insight:</strong> the main <code>user-events</code> topic is NOT blocked during retries.
+        Other messages keep flowing through normally while this one bounces through retry topics.
+        This is fundamentally different from RabbitMQ where a nacked message sits in the same queue.
+      </div>
+    </div>
+  </div>
+
+  <hr class="divider"/>
+
+  <!-- PHASE 5 -->
+  <p class="section-label" style="color:#8b5cf6;">Phase 5 — Advanced features</p>
+
+  <div class="step step-purple">
+    <div class="step-num">8</div>
+    <div class="step-body">
+      <div class="step-action">POST /api/kafka/send-batch — high-throughput batch publish</div>
+      <div class="step-desc">Send multiple events in one request. Kafka is designed for high-throughput sequential writes — this shows that strength. All events use the same key so they land in the same partition, preserving order.</div>
+      <div class="step-snippet"><button class="copy-btn" onclick="copySnippet(this)">copy</button>curl -s -X POST http://localhost:8080/api/kafka/send-batch \
+  -H "Authorization: Bearer $TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '[
+    {"action": "checkout"},
+    {"action": "payment"},
+    {"action": "confirm"},
+    {"action": "ship"},
+    {"action": "deliver"}
+  ]' | python3 -m json.tool</div>
+      <div class="log-block"><span class="ts">Response:</span>
+{ <span class="key">"count"</span>: <span class="val">5</span>, <span class="key">"status"</span>: <span class="val">"sent"</span>, <span class="key">"key"</span>: <span class="val">"alice"</span> }
+
+<span class="ts">Logs show 5 consecutive messages, same partition, offsets in order:</span>
+<span class="hi">checkout  → partition=1 offset=6</span>
+<span class="hi">payment   → partition=1 offset=7</span>
+<span class="hi">confirm   → partition=1 offset=8</span>
+<span class="hi">ship      → partition=1 offset=9</span>
+<span class="hi">deliver   → partition=1 offset=10</span></div>
+    </div>
+  </div>
+
+  <div class="step step-purple">
+    <div class="step-num">9</div>
+    <div class="step-body">
+      <div class="step-action">POST /api/kafka/send-partition — target a specific partition</div>
+      <div class="step-desc">Normally Kafka chooses the partition via key hash. Here you override that and send directly to partition 0. Watch the log confirm the partition matches what you requested.</div>
+      <div class="step-snippet"><button class="copy-btn" onclick="copySnippet(this)">copy</button>curl -s -X POST http://localhost:8080/api/kafka/send-partition \
+  -H "Authorization: Bearer $TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"action": "explicit-test", "partition": "0"}' | python3 -m json.tool</div>
+      <div class="log-block"><span class="ts">Log:</span>
+<span class="lvl">INFO</span>  KafkaMessagePublisher  - Published to explicit <span class="key">partition=</span><span class="val">0</span>  <span class="key">offset=</span><span class="val">0</span>
+<span class="lvl">INFO</span>  KafkaMessageConsumer  - Kafka received → <span class="key">partition=</span><span class="val">0</span>  <span class="key">offset=</span><span class="val">0</span></div>
+    </div>
+  </div>
+
+  <div class="step step-purple">
+    <div class="step-num">10</div>
+    <div class="step-body">
+      <div class="step-action">Inspect topics inside the Kafka container</div>
+      <div class="step-desc">Use the Kafka CLI (inside the Docker container) to list all topics and describe the <code>user-events</code> topic. This shows partition assignments and leader info.</div>
+      <div class="step-snippet"><button class="copy-btn" onclick="copySnippet(this)">copy</button><span class="dim"># list all topics</span>
+docker exec kafka /opt/kafka/bin/kafka-topics.sh \
+  --bootstrap-server localhost:9092 --list
+
+<span class="dim"># describe user-events topic (partitions, leaders, replicas)</span>
+docker exec kafka /opt/kafka/bin/kafka-topics.sh \
+  --bootstrap-server localhost:9092 \
+  --describe --topic user-events
+
+<span class="dim"># show consumer group offsets (which offset each partition is at)</span>
+docker exec kafka /opt/kafka/bin/kafka-consumer-groups.sh \
+  --bootstrap-server localhost:9092 \
+  --describe --group demo-group</div>
+      <div class="log-block"><span class="ts">Expected output (kafka-topics --describe):</span>
+Topic: <span class="hi">user-events</span>   PartitionCount: <span class="val">3</span>   ReplicationFactor: <span class="val">1</span>
+  Partition: <span class="val">0</span>   Leader: <span class="val">1</span>   Replicas: <span class="val">1</span>
+  Partition: <span class="val">1</span>   Leader: <span class="val">1</span>   Replicas: <span class="val">1</span>
+  Partition: <span class="val">2</span>   Leader: <span class="val">1</span>   Replicas: <span class="val">1</span>
+
+<span class="ts">Expected output (consumer-groups --describe):</span>
+GROUP        TOPIC         PARTITION  CURRENT-OFFSET  LOG-END-OFFSET  LAG
+<span class="hi">demo-group</span>   user-events   0          0               0               0
+<span class="hi">demo-group</span>   user-events   1          11              11              0
+<span class="hi">demo-group</span>   user-events   2          0               0               0</div>
+    </div>
+  </div>
+
+  <div class="step step-purple">
+    <div class="step-num">11</div>
+    <div class="step-body">
+      <div class="step-action">Replay messages from the beginning (unique to Kafka)</div>
+      <div class="step-desc">Unlike RabbitMQ, Kafka keeps messages after they're consumed. Reset the consumer group offset to replay all events from the start. This is impossible in RabbitMQ without explicit DLQ management.</div>
+      <div class="step-snippet"><button class="copy-btn" onclick="copySnippet(this)">copy</button><span class="dim"># 1. Stop the Spring app first (Ctrl+C), then reset offsets:</span>
+docker exec kafka /opt/kafka/bin/kafka-consumer-groups.sh \
+  --bootstrap-server localhost:9092 \
+  --group demo-group \
+  --topic user-events \
+  --reset-offsets --to-earliest --execute
+
+<span class="dim"># 2. Restart the app — it will re-consume ALL messages from offset 0:</span>
+mvn spring-boot:run</div>
+      <div class="step-desc" style="margin-top:8px;">
+        <strong style="color:#e2e8f0;">When to use this:</strong> replaying events for a new consumer feature,
+        rebuilding a read model, or debugging by re-processing historical data.
+      </div>
+    </div>
+  </div>
+
+  <div class="note-box note-green">
+    <strong>Checklist — what you should have seen:</strong><br/>
+    ✅ Topic created on startup with 3 partitions<br/>
+    ✅ Same username → same partition number every time<br/>
+    ✅ Offset increments by 1 per message in that partition<br/>
+    ✅ Retry flow: main topic → retry-0 → retry-1 → DLT (~15s total)<br/>
+    ✅ Main topic not blocked during retries<br/>
+    ✅ Batch: 5 events, same partition, consecutive offsets<br/>
+    ✅ CLI: consumer group lag = 0 (all caught up)
+  </div>
+
+</div>
+</div>
+
+
+<!-- ════════════════════════════════════════
+     TAB 3 — KAFKA CONCEPTS
+     ════════════════════════════════════════ -->
+<div id="tab-concepts" class="tab-panel">
+<div class="wrap">
+
+  <p class="section-label">Core concepts — what each one means in this demo</p>
+
+  <div class="concept-grid">
+
+    <div class="concept-card c-orange">
+      <h3>Topic</h3>
+      <p>A named, ordered, persistent log. All messages you publish go into a topic.
+         In this demo: <code>user-events</code>.<br/><br/>
+         Think of it as an append-only file on disk, not a temporary queue. Messages stay
+         even after they're consumed — retention policy decides when they're deleted (default: 7 days).</p>
+    </div>
+
+    <div class="concept-card c-green">
+      <h3>Partition</h3>
+      <p>Topics are split into partitions for parallelism.
+         <code>user-events</code> has <strong>3 partitions</strong>.<br/><br/>
+         Each partition is an independent ordered log. Messages within a partition are always
+         consumed in order. Across partitions, order is not guaranteed.</p>
+    </div>
+
+    <div class="concept-card c-blue">
+      <h3>Offset</h3>
+      <p>The position of a message within a partition. Starts at 0, increments by 1 per message.<br/><br/>
+         Consumers remember their offset. If a consumer crashes and restarts, it picks up exactly
+         where it left off. This is Kafka's "at-least-once" delivery guarantee.</p>
+    </div>
+
+    <div class="concept-card c-purple">
+      <h3>Consumer Group</h3>
+      <p>A group of consumers that share the work. <code>group-id: demo-group</code>.<br/><br/>
+         Kafka assigns each partition to exactly one consumer in the group. With 3 partitions
+         and 1 consumer instance, one consumer handles all 3. Add a second instance and
+         Kafka rebalances — each gets some partitions.</p>
+    </div>
+
+    <div class="concept-card c-yellow">
+      <h3>Message Key</h3>
+      <p>An optional string sent with each message. In this demo, the key is the username.<br/><br/>
+         Kafka uses <code>hash(key) % partitionCount</code> to decide the partition. Same key = same partition =
+         messages for the same user are always in order. Without a key, round-robin is used.</p>
+    </div>
+
+    <div class="concept-card c-red">
+      <h3>Dead Letter Topic (DLT)</h3>
+      <p>Where messages go when all retries fail. In this demo: <code>user-events.DLT</code>.<br/><br/>
+         Spring Kafka's <code>@RetryableTopic</code> automatically creates intermediate retry topics
+         and routes to the DLT after the last attempt. The <code>@DltHandler</code> method handles them.</p>
+    </div>
+
+  </div>
+
+  <hr class="divider"/>
+  <p class="section-label">How partition routing works in this demo</p>
+
+  <div class="partition-vis">
+    <div class="p-col">
+      <div class="p-header">Partition 0</div>
+      <div class="p-slot new"><span>offset 0</span><span class="off">explicit-test</span></div>
+      <div class="p-slot"><span>offset 1</span><span class="off">—</span></div>
+      <div class="p-slot"><span>offset 2</span><span class="off">—</span></div>
+      <div class="p-footer">key hash % 3 = 0</div>
+    </div>
+    <div class="p-col">
+      <div class="p-header" style="background:#0f4c30;">Partition 1</div>
+      <div class="p-slot new"><span>offset 0</span><span class="off">login</span></div>
+      <div class="p-slot new"><span>offset 1</span><span class="off">event-1</span></div>
+      <div class="p-slot new"><span>offset 2</span><span class="off">event-2</span></div>
+      <div class="p-slot new"><span>offset 3</span><span class="off">event-3</span></div>
+      <div class="p-slot new"><span>offset 4</span><span class="off">event-4</span></div>
+      <div class="p-slot new"><span>offset 5</span><span class="off">event-5</span></div>
+      <div class="p-slot new"><span>offset 6</span><span class="off">fail</span></div>
+      <div class="p-slot new"><span>offset 7</span><span class="off">checkout</span></div>
+      <div class="p-slot new"><span>offset 8</span><span class="off">payment</span></div>
+      <div class="p-slot new"><span>offset 9</span><span class="off">confirm</span></div>
+      <div class="p-slot new"><span>offset 10</span><span class="off">ship</span></div>
+      <div class="p-slot new"><span>offset 11</span><span class="off">deliver</span></div>
+      <div class="p-footer" style="color:#4ade80;">key="alice" hash % 3 = 1</div>
+    </div>
+    <div class="p-col">
+      <div class="p-header">Partition 2</div>
+      <div class="p-slot"><span>offset 0</span><span class="off">—</span></div>
+      <div class="p-slot"><span>offset 1</span><span class="off">—</span></div>
+      <div class="p-slot"><span>offset 2</span><span class="off">—</span></div>
+      <div class="p-footer">key hash % 3 = 2</div>
+    </div>
+  </div>
+
+  <div class="note-box">
+    <strong>Why does order matter?</strong> If you're modelling user actions — login → checkout → payment → ship —
+    they must be processed in order. With key=username, all events for "alice" go to the same partition
+    and are consumed in the same order they were published. This ordering guarantee is per-partition,
+    per-consumer-group.
+  </div>
+
+  <hr class="divider"/>
+  <p class="section-label">@RetryableTopic — how the retry chain works</p>
+
+  <div class="step step-red" style="margin-bottom:0;">
+    <div class="step-num" style="background:#334155; color:#94a3b8;">1</div>
+    <div class="step-body">
+      <div class="step-action"><span class="code">user-events</span> — attempt 1 (immediate)</div>
+      <div class="step-desc">Consumer reads the message. If it throws, Spring intercepts the exception.</div>
+    </div>
+  </div>
+  <div class="step step-yellow" style="margin-bottom:0;">
+    <div class="step-num" style="background:#92400e; color:#fff;">2</div>
+    <div class="step-body">
+      <div class="step-action"><span class="code">user-events-0</span> — retry 1 (after 3 s)</div>
+      <div class="step-desc">The original message is forwarded to a retry topic. The main topic is free to process other messages immediately.</div>
+    </div>
+  </div>
+  <div class="step step-yellow" style="margin-bottom:0;">
+    <div class="step-num" style="background:#78350f; color:#fff;">3</div>
+    <div class="step-body">
+      <div class="step-action"><span class="code">user-events-1</span> — retry 2 (after 6 s)</div>
+      <div class="step-desc">Still failing. Forwarded again to the second retry topic with a longer back-off.</div>
+    </div>
+  </div>
+  <div class="step step-red">
+    <div class="step-num">4</div>
+    <div class="step-body">
+      <div class="step-action"><span class="code">user-events.DLT</span> — final resting place</div>
+      <div class="step-desc">All attempts exhausted. The <code>@DltHandler</code> method receives the message. In production you'd persist it to a database or send an alert.</div>
+    </div>
+  </div>
+
+</div>
+</div>
+
+
+<!-- ════════════════════════════════════════
+     TAB 4 — KAFKA vs RABBITMQ
+     ════════════════════════════════════════ -->
+<div id="tab-vs" class="tab-panel">
+<div class="wrap">
+
+  <p class="section-label">Same project, two brokers — spot the difference</p>
+
+  <table class="vs-table">
+    <thead>
+      <tr>
+        <th>Concept</th>
+        <th>Kafka (this demo)</th>
+        <th>RabbitMQ (this demo)</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>Model</td>
+        <td>Distributed commit log — append-only, partitioned</td>
+        <td>Message broker — exchange routes to queues</td>
+      </tr>
+      <tr>
+        <td>Message routing</td>
+        <td>Producer selects topic + key → Kafka picks partition via hash</td>
+        <td>Producer sends to exchange with routing key → exchange routes to queue</td>
+      </tr>
+      <tr>
+        <td>After consumption</td>
+        <td>Message stays in the partition log until TTL expires. Can replay.</td>
+        <td>Message deleted after ack. Replay requires DLQ intervention.</td>
+      </tr>
+      <tr>
+        <td>Ordering</td>
+        <td>Guaranteed per partition. Same key → same partition → same order.</td>
+        <td>Guaranteed within a single queue if there is one consumer.</td>
+      </tr>
+      <tr>
+        <td>Dead letters</td>
+        <td>@RetryableTopic auto-creates retry topics + DLT. Main topic never blocked.</td>
+        <td>DLX/DLK configured on queue. Nacked messages re-sit in same queue during retry (blocks ordering).</td>
+      </tr>
+      <tr>
+        <td>Consumer group</td>
+        <td>One partition → one consumer per group. Add consumers = horizontal scale.</td>
+        <td>Competing consumers on a queue. Multiple consumers share the queue.</td>
+      </tr>
+      <tr>
+        <td>Throughput</td>
+        <td>Very high (sequential disk writes, batching, compression)</td>
+        <td>High but lower than Kafka; message ack per-message adds overhead</td>
+      </tr>
+      <tr>
+        <td>Use case sweet spot</td>
+        <td>Event streaming, audit logs, activity feeds, data pipelines</td>
+        <td>Task queues, RPC, work distribution, transient jobs</td>
+      </tr>
+      <tr>
+        <td>Spring annotation</td>
+        <td><code>@KafkaListener</code> / <code>@RetryableTopic</code></td>
+        <td><code>@RabbitListener</code> + retry interceptor</td>
+      </tr>
+      <tr>
+        <td>Send API</td>
+        <td><code>KafkaTemplate.send(topic, key, value)</code> → CompletableFuture</td>
+        <td><code>RabbitTemplate.convertAndSend(exchange, routingKey, obj)</code></td>
+      </tr>
+      <tr>
+        <td>Config concept</td>
+        <td>bootstrap-servers → topics → partitions → consumer-group</td>
+        <td>host → exchange → binding → queue → dead-letter-exchange</td>
+      </tr>
+      <tr>
+        <td>Management UI</td>
+        <td>No built-in UI. Use kafka-topics.sh CLI or Kafka UI (separate tool)</td>
+        <td>Built-in web UI at :15672 (RabbitMQ Management plugin)</td>
+      </tr>
+      <tr>
+        <td>Port</td>
+        <td>9092 (PLAINTEXT)</td>
+        <td>5672 (AMQP) · 15672 (management)</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <hr class="divider"/>
+  <p class="section-label">Side-by-side code comparison</p>
+
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:0;">
+
+    <div>
+      <p style="font-size:0.72rem;color:#4ade80;font-weight:700;margin-bottom:8px;text-transform:uppercase;letter-spacing:.06em;">Kafka — publish</p>
+      <div class="step-snippet" style="margin-top:0;font-size:0.68rem;">
+<span class="dim">// key = username → same user</span>
+<span class="dim">// always → same partition</span>
+kafkaTemplate.send(
+  <span class="orange">topic</span>,
+  <span class="orange">username</span>,  <span class="dim">// key</span>
+  <span class="orange">event</span>
+);</div>
+    </div>
+
+    <div>
+      <p style="font-size:0.72rem;color:#fb923c;font-weight:700;margin-bottom:8px;text-transform:uppercase;letter-spacing:.06em;">RabbitMQ — publish</p>
+      <div class="step-snippet" style="margin-top:0;font-size:0.68rem;">
+<span class="dim">// routing key selects which</span>
+<span class="dim">// queue receives the message</span>
+rabbitTemplate.convertAndSend(
+  <span class="orange">exchange</span>,
+  <span class="orange">routingKey</span>,
+  <span class="orange">event</span>
+);</div>
+    </div>
+
+    <div>
+      <p style="font-size:0.72rem;color:#4ade80;font-weight:700;margin-bottom:8px;text-transform:uppercase;letter-spacing:.06em;">Kafka — consume</p>
+      <div class="step-snippet" style="margin-top:0;font-size:0.68rem;">
+<span class="purple">@RetryableTopic</span>(attempts = <span class="orange">"3"</span>)
+<span class="purple">@KafkaListener</span>(topics = <span class="orange">"user-events"</span>)
+<span class="blue">void</span> handle(
+  ConsumerRecord&lt;String, UserEvent&gt; r
+) {
+  <span class="dim">// r.partition(), r.offset()</span>
+  <span class="dim">// r.key(), r.value()</span>
+}</div>
+    </div>
+
+    <div>
+      <p style="font-size:0.72rem;color:#fb923c;font-weight:700;margin-bottom:8px;text-transform:uppercase;letter-spacing:.06em;">RabbitMQ — consume</p>
+      <div class="step-snippet" style="margin-top:0;font-size:0.68rem;">
+<span class="dim">// retry configured in application.yml</span>
+<span class="dim">// max-attempts: 5, interval: 5000ms</span>
+<span class="purple">@RabbitListener</span>(
+  queues = <span class="orange">"user.events.queue"</span>
+)
+<span class="blue">void</span> handle(UserEvent event) {
+  <span class="dim">// no offset, no partition</span>
+}</div>
+    </div>
+
+  </div>
+
+  <div class="note-box note-orange" style="margin-top:28px;">
+    <strong>When to choose Kafka over RabbitMQ:</strong><br/>
+    • You need to <strong>replay</strong> past events (audit trail, new service bootstrap, bug investigation)<br/>
+    • You need <strong>strict per-user or per-entity ordering</strong> across many consumers<br/>
+    • You need <strong>very high throughput</strong> (millions of events/sec)<br/>
+    • Multiple independent services must consume the <strong>same events independently</strong> (each group gets its own offset)<br/><br/>
+    <strong>When to stick with RabbitMQ:</strong><br/>
+    • Simple task queue — do this job once, discard after done<br/>
+    • RPC-style request/reply patterns<br/>
+    • Rich routing (topic exchange, headers exchange) with complex binding rules<br/>
+    • You want a built-in management UI without extra tooling
+  </div>
+
+</div>
+</div>
+
+
+<footer>keycloak-spring-demo &nbsp;·&nbsp; kafka-guide.html &nbsp;·&nbsp; Kafka 3.7.1 (KRaft) · Spring Kafka 3.x</footer>
+
+<script>
+function switchTab(name, btn, activeClass) {
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b => {
+    b.classList.remove('active-orange','active-blue','active-green','active-purple');
+  });
+  document.getElementById('tab-' + name).classList.add('active');
+  btn.classList.add(activeClass);
+}
+
+function copySnippet(btn) {
+  const pre = btn.parentElement;
+  const text = pre.innerText.replace(/^copy\n/, '').replace(/^copy/, '');
+  navigator.clipboard.writeText(text.trim()).then(() => {
+    btn.textContent = 'copied!';
+    btn.classList.add('copied');
+    setTimeout(() => { btn.textContent = 'copy'; btn.classList.remove('copied'); }, 2000);
+  });
+}
+</script>
+</body>
+</html>

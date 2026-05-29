@@ -11,5 +11,6 @@ public class MessageConsumer {
     @RabbitListener(queues = "${rabbitmq.queue}")
     public void handleUserEvent(UserEvent event) {
         log.info("Received user event: user={} action={} at={}", event.getUsername(), event.getAction(), event.getTimestamp());
+        throw new RuntimeException("Simulated processing error for: " + event.getAction());
     }
 }

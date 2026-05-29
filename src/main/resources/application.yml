@@ -5,16 +5,36 @@ spring:
   application:
     name: keycloak-spring-demo
 
+  rabbitmq:
+    listener:
+      simple:
+        retry:
+          enabled: true
+          max-attempts: 5
+          initial-interval: 5000
+
+  kafka:
+    bootstrap-servers: localhost:9092
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
+      properties:
+        spring.json.add.type.headers: false
+    consumer:
+      group-id: demo-group
+      auto-offset-reset: earliest
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
+      properties:
+        spring.json.trusted.packages: "com.demo.keycloak.messaging"
+
   security:
     oauth2:
-      # --- Resource Server: validates JWT tokens on API calls ---
       resourceserver:
         jwt:
-          # Replace <EC2_PUBLIC_IP> with your EC2 public IP or domain
           issuer-uri: http://52.65.212.193:8180/realms/demo-realm
           jwk-set-uri: http://52.65.212.193:8180/realms/demo-realm/protocol/openid-connect/certs
 
-      # --- OAuth2 Client: browser-based login redirect flow ---
       client:
         registration:
           keycloak:
@@ -28,7 +48,6 @@ spring:
             issuer-uri: http://52.65.212.193:8180/realms/demo-realm
             user-name-attribute: preferred_username
 
-# App-level config
 app:
   keycloak:
     realm: demo-realm
@@ -45,6 +64,14 @@ rabbitmq:
   exchange: demo.exchange
   queue: user.events.queue
   routing-key: user.event
+  dead-letter-exchange: demo.dead-letter.exchange
+  dead-letter-queue: user.events.dead-letter.queue
+  dead-letter-routing-key: user.event.dead
+
+kafka:
+  topics:
+    user-events: user-events
+    user-events-dlt: user-events.DLT
 
 logging:
   level:

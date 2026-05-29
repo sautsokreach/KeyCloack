@@ -7,6 +7,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import java.time.Instant;
+import java.util.Map;
 
 @Slf4j
 @Service
@@ -25,5 +26,10 @@ public class MessagePublisher {
         UserEvent event = new UserEvent(username, action, Instant.now());
         rabbitTemplate.convertAndSend(exchange, routingKey, event);
         log.info("Published user event: {} - {}", username, action);
+    }
+
+    public void publishRaw(Map<String, Object> rawPayload) {
+        rabbitTemplate.convertAndSend(exchange, routingKey, rawPayload);
+        log.info("Published raw payload: {}", rawPayload);
     }
 }
