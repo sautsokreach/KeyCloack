@@ -35,6 +35,17 @@ app:
     server-url: http://52.65.212.193:8180
     client-id: spring-demo-client
 
+  rabbitmq:
+    host: localhost
+    port: 5672
+    username: guest
+    password: guest
+
+rabbitmq:
+  exchange: demo.exchange
+  queue: user.events.queue
+  routing-key: user.event
+
 logging:
   level:
     org.springframework.security: DEBUG

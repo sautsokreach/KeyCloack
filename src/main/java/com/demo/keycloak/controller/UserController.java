@@ -1,6 +1,8 @@
 package com.demo.keycloak.controller;
 
 import com.demo.keycloak.dto.UserInfoDto;
+import com.demo.keycloak.messaging.MessagePublisher;
+import lombok.RequiredArgsConstructor;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
@@ -13,12 +15,11 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/user")
+@RequiredArgsConstructor
 public class UserController {
 
-    /**
-     * Any authenticated user can access this.
-     * Spring Security enforces hasRole("USER") from SecurityConfig.
-     */
+    private final MessagePublisher publisher;
+
     @GetMapping("/profile")
     public UserInfoDto getProfile(Authentication authentication) {
         Jwt jwt = (Jwt) authentication.getPrincipal();
@@ -26,6 +27,8 @@ public class UserController {
         List<String> roles = authentication.getAuthorities().stream()
             .map(GrantedAuthority::getAuthority)
             .toList();
+
+        publisher.publishUserEvent(jwt.getClaimAsString("preferred_username"), "profile-viewed");
 
         return UserInfoDto.builder()
             .username(jwt.getClaimAsString("preferred_username"))
