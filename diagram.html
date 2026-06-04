@@ -410,7 +410,7 @@ footer {
     <div class="actor-card actor-keycloak">
       <div class="actor-icon">🔑</div>
       <div class="actor-name">Keycloak</div>
-      <div class="actor-port">:8180  realm: demo-realm</div>
+      <div class="actor-port">:8180  realm: master</div>
     </div>
   </div>
 
@@ -426,7 +426,7 @@ footer {
           <span class="arrow-icon">→</span>
           <span class="to-badge badge-spring">Spring Boot</span>
         </div>
-        <div class="step-action"><span class="method">GET</span> <span class="url">http://52.65.212.193:8080/</span></div>
+        <div class="step-action"><span class="method">GET</span> <span class="url">http://13.210.141.214:8080/</span></div>
         <div class="step-desc">User visits any protected page. No session cookie → Spring sees unauthenticated request.</div>
       </div>
     </div>
@@ -469,10 +469,10 @@ footer {
           <span class="to-badge badge-browser">Browser</span>
         </div>
         <div class="step-action"><span class="redirect">302 Redirect → Keycloak Authorization Endpoint</span></div>
-        <div class="step-snippet"><span class="dim">GET</span> <span class="blue">:8180/realms/demo-realm/protocol/openid-connect/auth</span>
+        <div class="step-snippet"><span class="dim">GET</span> <span class="blue">:8180/realms/master/protocol/openid-connect/auth</span>
   ?response_type=<span class="orange">code</span>
   &amp;client_id=<span class="orange">spring-demo-client</span>
-  &amp;redirect_uri=<span class="orange">http://52.65.212.193:8080/login/oauth2/code/keycloak</span>
+  &amp;redirect_uri=<span class="orange">http://13.210.141.214:8080/login/oauth2/code/keycloak</span>
   &amp;scope=<span class="orange">openid profile email roles</span>
   &amp;state=<span class="orange">random-csrf-token</span></div>
       </div>
@@ -502,7 +502,7 @@ footer {
           <span class="to-badge badge-keycloak">Keycloak</span>
         </div>
         <div class="step-action"><span class="method">POST</span> <span class="url">Keycloak Login Form Submit</span></div>
-        <div class="step-desc">User types username &amp; password and submits. Keycloak validates credentials against its user store in <code>demo-realm</code>. Spring Boot never sees the password.</div>
+        <div class="step-desc">User types username &amp; password and submits. Keycloak validates credentials against its user store in <code>master</code>. Spring Boot never sees the password.</div>
         <div class="step-snippet">username=alice&amp;password=secret&amp;credentialId=</div>
       </div>
     </div>
@@ -517,7 +517,7 @@ footer {
           <span class="to-badge badge-browser">Browser</span>
         </div>
         <div class="step-action"><span class="redirect">302 Redirect → Spring Boot Callback URL</span></div>
-        <div class="step-snippet"><span class="dim">GET</span> <span class="blue">http://52.65.212.193:8080/login/oauth2/code/keycloak</span>
+        <div class="step-snippet"><span class="dim">GET</span> <span class="blue">http://13.210.141.214:8080/login/oauth2/code/keycloak</span>
   ?code=<span class="orange">AUTH_CODE_abc123</span>
   &amp;state=<span class="orange">random-csrf-token</span></div>
         <div class="step-desc">Keycloak sends a short-lived authorization code (not the token yet).</div>
@@ -549,10 +549,10 @@ footer {
           <span style="font-size:0.68rem;color:#64748b;margin-left:4px">(back-channel)</span>
         </div>
         <div class="step-action"><span class="method">POST</span> <span class="url">:8180/…/token</span></div>
-        <div class="step-snippet"><span class="dim">POST</span> <span class="blue">:8180/realms/demo-realm/protocol/openid-connect/token</span>
+        <div class="step-snippet"><span class="dim">POST</span> <span class="blue">:8180/realms/master/protocol/openid-connect/token</span>
   grant_type=<span class="orange">authorization_code</span>
   code=<span class="orange">AUTH_CODE_abc123</span>
-  redirect_uri=<span class="orange">http://52.65.212.193:8080/login/oauth2/code/keycloak</span>
+  redirect_uri=<span class="orange">http://13.210.141.214:8080/login/oauth2/code/keycloak</span>
   client_id=<span class="orange">spring-demo-client</span>
   client_secret=<span class="orange">super-secret-client-key</span></div>
       </div>
@@ -672,7 +672,7 @@ footer {
     <div class="actor-card actor-keycloak">
       <div class="actor-icon">🔑</div>
       <div class="actor-name">Keycloak</div>
-      <div class="actor-port">:8180  realm: demo-realm</div>
+      <div class="actor-port">:8180  realm: master</div>
     </div>
   </div>
 
@@ -689,7 +689,7 @@ footer {
           <span class="to-badge badge-keycloak">Keycloak</span>
           <span style="font-size:0.68rem;color:#64748b;margin-left:4px">(direct — Spring not involved)</span>
         </div>
-        <div class="step-action"><span class="method">POST</span> <span class="url">:8180/realms/demo-realm/protocol/openid-connect/token</span></div>
+        <div class="step-action"><span class="method">POST</span> <span class="url">:8180/realms/master/protocol/openid-connect/token</span></div>
         <div class="step-desc">Client sends credentials directly to Keycloak. Spring Boot never sees the password. Uses <code>password</code> grant (Resource Owner Password Credentials).</div>
         <div class="step-snippet">grant_type=<span class="orange">password</span>
 client_id=<span class="orange">spring-demo-client</span>
@@ -709,7 +709,7 @@ password=<span class="orange">secret</span></div>
           <span class="to-badge badge-browser">API Client</span>
         </div>
         <div class="step-action"><span class="method">200 OK</span> — JWT Access Token</div>
-        <div class="step-desc">Keycloak checks credentials, looks up the user's roles in <code>demo-realm</code>, signs a JWT with its RSA private key.</div>
+        <div class="step-desc">Keycloak checks credentials, looks up the user's roles in <code>master</code>, signs a JWT with its RSA private key.</div>
         <div class="step-snippet">{
   <span class="blue">"access_token"</span>: <span class="orange">"eyJhbGciOiJSUzI1NiIs..."</span>,
   <span class="blue">"expires_in"</span>:   <span class="orange">300</span>,
@@ -717,10 +717,10 @@ password=<span class="orange">secret</span></div>
 }
 
 <span class="dim">JWT Payload contains:</span>
-  <span class="purple">realm_access.roles</span>: ["USER", "default-roles-demo-realm"]
+  <span class="purple">realm_access.roles</span>: ["USER", "default-roles-master"]
   <span class="purple">resource_access.spring-demo-client.roles</span>: [...]
   <span class="purple">preferred_username</span>: "alice"
-  <span class="purple">iss</span>: "http://52.65.212.193:8180/realms/demo-realm"</div>
+  <span class="purple">iss</span>: "http://13.210.141.214:8180/realms/master"</div>
       </div>
     </div>
 
@@ -749,7 +749,7 @@ password=<span class="orange">secret</span></div>
           <span class="to-badge badge-keycloak">Keycloak</span>
           <span style="font-size:0.68rem;color:#64748b;margin-left:4px">(once at startup / on key rotation)</span>
         </div>
-        <div class="step-action"><span class="method">GET</span> <span class="url">:8180/realms/demo-realm/protocol/openid-connect/certs</span></div>
+        <div class="step-action"><span class="method">GET</span> <span class="url">:8180/realms/master/protocol/openid-connect/certs</span></div>
         <div class="step-desc">Spring fetches Keycloak's public RSA keys (JWK Set) on first request. Keys are cached — no round-trip to Keycloak per API call. Configured via <code>jwk-set-uri</code> in <code>application.yml</code>.</div>
         <div class="step-snippet"><span class="dim">Response: JWK Set (Keycloak's public key)</span>
 { "keys": [{ "kty":"RSA","kid":"abc123","n":"...","e":"AQAB" }] }</div>
@@ -769,7 +769,7 @@ password=<span class="orange">secret</span></div>
         <div class="step-snippet">Checks:
   signature  → valid (matches Keycloak public key)
   exp        → not expired
-  iss        → "http://52.65.212.193:8180/realms/demo-realm" ✓</div>
+  iss        → "http://13.210.141.214:8180/realms/master" ✓</div>
       </div>
     </div>
 
@@ -824,7 +824,7 @@ resource_access["spring-demo-client"].roles: ["admin"]
   <span class="blue">"email"</span>:    <span class="orange">"alice@example.com"</span>,
   <span class="blue">"subject"</span>:  <span class="orange">"user-uuid-from-keycloak"</span>,
   <span class="blue">"roles"</span>:    <span class="orange">["ROLE_USER"]</span>,
-  <span class="blue">"issuer"</span>:   <span class="orange">"http://52.65.212.193:8180/realms/demo-realm"</span>
+  <span class="blue">"issuer"</span>:   <span class="orange">"http://13.210.141.214:8180/realms/master"</span>
 }</div>
       </div>
     </div>
@@ -878,7 +878,7 @@ resource_access["spring-demo-client"].roles: ["admin"]
           <span class="arrow-icon">→</span>
           <span class="to-badge badge-spring">Spring Boot</span>
         </div>
-        <div class="step-action"><span class="method">GET</span> <span class="url">http://52.65.212.193:8080/</span></div>
+        <div class="step-action"><span class="method">GET</span> <span class="url">http://13.210.141.214:8080/</span></div>
         <div class="step-desc">New user visits the app. No session → Spring redirects through the same OAuth2 flow as login.</div>
       </div>
     </div>
@@ -922,9 +922,9 @@ resource_access["spring-demo-client"].roles: ["admin"]
         </div>
         <div class="step-action"><span class="method">GET</span> <span class="url">Keycloak Registration Page</span></div>
         <div class="step-desc">User clicks "Register". Keycloak shows its own registration form.</div>
-        <div class="step-snippet"><span class="dim">GET</span> <span class="blue">:8180/realms/demo-realm/protocol/openid-connect/registrations</span>
+        <div class="step-snippet"><span class="dim">GET</span> <span class="blue">:8180/realms/master/protocol/openid-connect/registrations</span>
   ?client_id=spring-demo-client
-  &amp;redirect_uri=http://52.65.212.193:8080/login/oauth2/code/keycloak
+  &amp;redirect_uri=http://13.210.141.214:8080/login/oauth2/code/keycloak
   &amp;response_type=code
   &amp;scope=openid profile email roles</div>
       </div>
@@ -958,8 +958,8 @@ password-confirm=<span class="orange">newpassword</span></div>
           <span class="from-badge badge-keycloak">Keycloak</span>
           <span style="font-size:0.72rem;color:#64748b">(internal)</span>
         </div>
-        <div class="step-action">Creates user account in <span class="code">demo-realm</span></div>
-        <div class="step-desc">Keycloak creates the user in its database, hashes the password, and assigns <strong>default realm roles</strong> (e.g., <code>default-roles-demo-realm</code>). Does NOT automatically assign <code>USER</code> or <code>ADMIN</code> — those must be assigned manually in Keycloak Admin UI or via Admin REST API.</div>
+        <div class="step-action">Creates user account in <span class="code">master</span></div>
+        <div class="step-desc">Keycloak creates the user in its database, hashes the password, and assigns <strong>default realm roles</strong> (e.g., <code>default-roles-master</code>). Does NOT automatically assign <code>USER</code> or <code>ADMIN</code> — those must be assigned manually in Keycloak Admin UI or via Admin REST API.</div>
         <div class="step-snippet"><span class="dim">Keycloak Admin UI → Users → alice → Role Mapping</span>
   Assign realm role: <span class="orange">USER</span>  <span class="dim">← must be done manually</span></div>
       </div>
@@ -976,7 +976,7 @@ password-confirm=<span class="orange">newpassword</span></div>
         </div>
         <div class="step-action"><span class="redirect">302 → Spring Boot Callback (with authorization code)</span></div>
         <div class="step-desc">After successful registration, Keycloak automatically logs the user in and sends the authorization code back to Spring Boot — same as step 7 in the login flow.</div>
-        <div class="step-snippet"><span class="dim">GET</span> <span class="blue">http://52.65.212.193:8080/login/oauth2/code/keycloak</span>
+        <div class="step-snippet"><span class="dim">GET</span> <span class="blue">http://13.210.141.214:8080/login/oauth2/code/keycloak</span>
   ?code=<span class="orange">NEW_AUTH_CODE</span>
   &amp;state=<span class="orange">random-csrf-token</span></div>
       </div>
@@ -1072,9 +1072,9 @@ password-confirm=<span class="orange">newpassword</span></div>
         <div class="step-desc">Configured in SecurityConfig: <code>.invalidateHttpSession(true)</code> + <code>.clearAuthentication(true)</code>. Removes the <code>OidcUser</code> from the session. Invalidates the session cookie.</div>
         <div class="step-snippet"><span class="dim">SecurityConfig logout config:</span>
 .logout(logout -> logout
-  .logoutSuccessUrl(<span class="orange">"http://52.65.212.193:8180/realms/demo-realm"</span>
+  .logoutSuccessUrl(<span class="orange">"http://13.210.141.214:8180/realms/master"</span>
     + <span class="orange">"/protocol/openid-connect/logout"</span>
-    + <span class="orange">"?redirect_uri=http://52.65.212.193:8080/oauth2/authorization/keycloak"</span>)
+    + <span class="orange">"?redirect_uri=http://13.210.141.214:8080/oauth2/authorization/keycloak"</span>)
   .invalidateHttpSession(<span class="orange">true</span>)
   .clearAuthentication(<span class="orange">true</span>)
 )</div>
@@ -1091,8 +1091,8 @@ password-confirm=<span class="orange">newpassword</span></div>
           <span class="to-badge badge-browser">Browser</span>
         </div>
         <div class="step-action"><span class="redirect">302 Redirect → Keycloak Logout Endpoint</span></div>
-        <div class="step-snippet"><span class="dim">GET</span> <span class="blue">:8180/realms/demo-realm/protocol/openid-connect/logout</span>
-  ?redirect_uri=<span class="orange">http://52.65.212.193:8080/oauth2/authorization/keycloak</span></div>
+        <div class="step-snippet"><span class="dim">GET</span> <span class="blue">:8180/realms/master/protocol/openid-connect/logout</span>
+  ?redirect_uri=<span class="orange">http://13.210.141.214:8080/oauth2/authorization/keycloak</span></div>
       </div>
     </div>
 
@@ -1133,7 +1133,7 @@ password-confirm=<span class="orange">newpassword</span></div>
           <span class="to-badge badge-browser">Browser</span>
         </div>
         <div class="step-action"><span class="redirect">302 Redirect → redirect_uri</span></div>
-        <div class="step-desc">Keycloak redirects to the <code>redirect_uri</code> specified in the logout URL: <code>http://52.65.212.193:8080/oauth2/authorization/keycloak</code>. This triggers the OAuth2 authorization flow again.</div>
+        <div class="step-desc">Keycloak redirects to the <code>redirect_uri</code> specified in the logout URL: <code>http://13.210.141.214:8080/oauth2/authorization/keycloak</code>. This triggers the OAuth2 authorization flow again.</div>
       </div>
     </div>
 
@@ -1235,13 +1235,13 @@ password-confirm=<span class="orange">newpassword</span></div>
       </tr>
       <tr>
         <td class="method-post">POST</td>
-        <td class="path-col">:8180/realms/demo-realm/protocol/openid-connect/token</td>
+        <td class="path-col">:8180/realms/master/protocol/openid-connect/token</td>
         <td class="auth-keycloak">client_id + credentials</td>
         <td>Keycloak — issues JWT access token</td>
       </tr>
       <tr>
         <td class="method-get">GET</td>
-        <td class="path-col">:8180/realms/demo-realm/protocol/openid-connect/certs</td>
+        <td class="path-col">:8180/realms/master/protocol/openid-connect/certs</td>
         <td class="auth-public">None</td>
         <td>Keycloak — JWK Set (public keys for JWT verification)</td>
       </tr>

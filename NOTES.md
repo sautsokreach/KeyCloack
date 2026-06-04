@@ -4,7 +4,7 @@
 
 | Item | Value |
 |------|-------|
-| EC2 Public IP | `52.65.212.193` |
+| EC2 Public IP | `13.210.141.214` |
 | OS | Ubuntu (resolute) on AWS EC2 |
 | Java | OpenJDK 17 |
 | Docker | 29.1.3 |
@@ -29,14 +29,14 @@
 
 ### Admin Console
 ```
-URL      : http://52.65.212.193:8180/admin
+URL      : http://13.210.141.214:8180/admin
 Username : admin
 Password : admin123
 ```
 
 ### Realm
 ```
-Name : demo-realm
+Name : master
 ```
 
 ### Client
@@ -44,7 +44,7 @@ Name : demo-realm
 Client ID     : spring-demo-client
 Client Secret : super-secret-client-key
 Grant Types   : authorization_code, password (direct access)
-Redirect URIs : http://52.65.212.193:8080/*
+Redirect URIs : http://13.210.141.214:8080/*
                http://localhost:8080/*
 ```
 
@@ -59,10 +59,10 @@ Redirect URIs : http://52.65.212.193:8080/*
 
 | Purpose | URL |
 |---------|-----|
-| OIDC Discovery | `http://52.65.212.193:8180/realms/demo-realm/.well-known/openid-configuration` |
-| Token endpoint | `http://52.65.212.193:8180/realms/demo-realm/protocol/openid-connect/token` |
-| JWK (public keys) | `http://52.65.212.193:8180/realms/demo-realm/protocol/openid-connect/certs` |
-| Admin API | `http://52.65.212.193:8180/admin/realms/demo-realm` |
+| OIDC Discovery | `http://13.210.141.214:8180/realms/master/.well-known/openid-configuration` |
+| Token endpoint | `http://13.210.141.214:8180/realms/master/protocol/openid-connect/token` |
+| JWK (public keys) | `http://13.210.141.214:8180/realms/master/protocol/openid-connect/certs` |
+| Admin API | `http://13.210.141.214:8180/admin/realms/master` |
 
 ---
 
@@ -111,7 +111,7 @@ mvn spring-boot:run
 
 ### As testuser (USER role)
 ```bash
-curl -s -X POST "http://52.65.212.193:8180/realms/demo-realm/protocol/openid-connect/token" \
+curl -s -X POST "http://13.210.141.214:8180/realms/master/protocol/openid-connect/token" \
   -H "Content-Type: application/x-www-form-urlencoded" \
   -d "client_id=spring-demo-client" \
   -d "client_secret=super-secret-client-key" \
@@ -122,7 +122,7 @@ curl -s -X POST "http://52.65.212.193:8180/realms/demo-realm/protocol/openid-con
 
 ### As adminuser (ADMIN role)
 ```bash
-curl -s -X POST "http://52.65.212.193:8180/realms/demo-realm/protocol/openid-connect/token" \
+curl -s -X POST "http://13.210.141.214:8180/realms/master/protocol/openid-connect/token" \
   -H "Content-Type: application/x-www-form-urlencoded" \
   -d "client_id=spring-demo-client" \
   -d "client_secret=super-secret-client-key" \
@@ -135,14 +135,14 @@ curl -s -X POST "http://52.65.212.193:8180/realms/demo-realm/protocol/openid-con
 ```bash
 TOKEN="<paste access_token here>"
 
-curl http://52.65.212.193:8080/api/user/profile \
+curl http://13.210.141.214:8080/api/user/profile \
   -H "Authorization: Bearer $TOKEN"
 ```
 
 ### Run all tests at once
 ```bash
 cd ~/keycloak-spring-demo
-./test-api.sh 52.65.212.193
+./test-api.sh 13.210.141.214
 ```
 
 ---
@@ -197,7 +197,7 @@ keycloak-spring-demo/
   "realm_access": {
     "roles": ["USER", "offline_access", "uma_authorization"]
   },
-  "iss": "http://52.65.212.193:8180/realms/demo-realm",
+  "iss": "http://13.210.141.214:8180/realms/master",
   "exp": 1748396700
 }
 ```
@@ -215,7 +215,7 @@ ADMIN_TOKEN=$(curl -s -X POST "http://localhost:8180/realms/master/protocol/open
   -d "client_id=admin-cli&username=admin&password=admin123&grant_type=password" \
   | python3 -c "import sys,json; print(json.load(sys.stdin)['access_token'])")
 
-curl -s -X PUT "http://localhost:8180/admin/realms/demo-realm" \
+curl -s -X PUT "http://localhost:8180/admin/realms/master" \
   -H "Authorization: Bearer ${ADMIN_TOKEN}" \
   -H "Content-Type: application/json" \
   -d '{"sslRequired":"none"}'

@@ -51,8 +51,8 @@ public class SecurityConfig {
             )
             .logout(logout -> logout
                 // After logout, send user back to Keycloak login page
-                .logoutSuccessUrl("http://52.65.212.193:8180/realms/demo-realm/protocol/openid-connect/logout"
-                    + "?redirect_uri=http://52.65.212.193:8080/oauth2/authorization/keycloak")
+                .logoutSuccessUrl("http://13.210.141.214:8180/realms/master/protocol/openid-connect/logout"
+                    + "?redirect_uri=http://13.210.141.214:8080/oauth2/authorization/keycloak")
                 .invalidateHttpSession(true)
                 .clearAuthentication(true)
             );

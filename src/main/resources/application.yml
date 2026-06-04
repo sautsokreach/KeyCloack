@@ -32,8 +32,8 @@ spring:
     oauth2:
       resourceserver:
         jwt:
-          issuer-uri: http://52.65.212.193:8180/realms/demo-realm
-          jwk-set-uri: http://52.65.212.193:8180/realms/demo-realm/protocol/openid-connect/certs
+          issuer-uri: http://13.210.141.214:8180/realms/master
+          jwk-set-uri: http://13.210.141.214:8180/realms/master/protocol/openid-connect/certs
 
       client:
         registration:
@@ -42,16 +42,16 @@ spring:
             client-secret: super-secret-client-key
             scope: openid, profile, email, roles
             authorization-grant-type: authorization_code
-            redirect-uri: "http://52.65.212.193:8080/login/oauth2/code/keycloak"
+            redirect-uri: "http://13.210.141.214:8080/login/oauth2/code/keycloak"
         provider:
           keycloak:
-            issuer-uri: http://52.65.212.193:8180/realms/demo-realm
+            issuer-uri: http://13.210.141.214:8180/realms/master
             user-name-attribute: preferred_username
 
 app:
   keycloak:
-    realm: demo-realm
-    server-url: http://52.65.212.193:8180
+    realm: master
+    server-url: http://13.210.141.214:8180
     client-id: spring-demo-client
 
   rabbitmq:

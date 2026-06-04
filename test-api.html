@@ -1,0 +1,675 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>API Test Script — Keycloak + Spring Boot</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: #0f172a;
+      color: #e2e8f0;
+      line-height: 1.6;
+    }
+
+    header {
+      background: linear-gradient(135deg, #1e3a5f 0%, #1e40af 100%);
+      padding: 40px 24px 32px;
+      text-align: center;
+      border-bottom: 1px solid #1e3a8a;
+    }
+    header h1 { font-size: 1.8rem; font-weight: 700; color: #fff; margin-bottom: 6px; }
+    header p  { font-size: 0.9rem; color: #93c5fd; }
+    header .meta {
+      display: flex;
+      justify-content: center;
+      gap: 20px;
+      margin-top: 14px;
+      flex-wrap: wrap;
+    }
+    header .meta span {
+      background: rgba(255,255,255,0.1);
+      padding: 4px 12px;
+      border-radius: 20px;
+      font-size: 0.78rem;
+      color: #bfdbfe;
+      font-family: monospace;
+    }
+
+    main {
+      max-width: 900px;
+      margin: 36px auto;
+      padding: 0 20px 60px;
+    }
+
+    /* Config box */
+    .config-card {
+      background: #1e293b;
+      border: 1px solid #334155;
+      border-radius: 12px;
+      padding: 20px 24px;
+      margin-bottom: 32px;
+    }
+    .config-card h2 {
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: #64748b;
+      margin-bottom: 14px;
+    }
+    .config-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+      gap: 10px;
+    }
+    .config-row {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+    .config-label { font-size: 0.72rem; color: #64748b; text-transform: uppercase; letter-spacing: 0.06em; }
+    .config-value {
+      font-family: 'Fira Code', monospace;
+      font-size: 0.85rem;
+      color: #38bdf8;
+      background: #0f172a;
+      padding: 6px 10px;
+      border-radius: 6px;
+      border: 1px solid #1e3a5f;
+      word-break: break-all;
+    }
+
+    /* Step cards */
+    .step {
+      background: #1e293b;
+      border: 1px solid #334155;
+      border-radius: 12px;
+      margin-bottom: 20px;
+      overflow: hidden;
+    }
+    .step-header {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      padding: 16px 20px;
+      cursor: pointer;
+      user-select: none;
+      transition: background 0.15s;
+    }
+    .step-header:hover { background: #243348; }
+
+    .step-num {
+      width: 32px; height: 32px;
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-weight: 700; font-size: 0.85rem;
+      flex-shrink: 0;
+    }
+    .num-default { background: #1e40af; color: #bfdbfe; }
+    .num-user    { background: #065f46; color: #6ee7b7; }
+    .num-admin   { background: #7c2d12; color: #fca5a5; }
+    .num-token   { background: #78350f; color: #fcd34d; }
+
+    .step-title  { flex: 1; font-weight: 600; font-size: 0.95rem; color: #e2e8f0; }
+
+    .badge {
+      font-size: 0.7rem; font-weight: 700; padding: 3px 10px;
+      border-radius: 20px; letter-spacing: 0.04em;
+    }
+    .badge-get    { background: #1e40af; color: #bfdbfe; }
+    .badge-post   { background: #065f46; color: #6ee7b7; }
+    .badge-403    { background: #7c2d12; color: #fca5a5; }
+    .badge-token  { background: #78350f; color: #fcd34d; }
+
+    .chevron { color: #64748b; font-size: 1rem; transition: transform 0.2s; flex-shrink: 0; }
+    .step.open .chevron { transform: rotate(180deg); }
+
+    .step-body {
+      display: none;
+      padding: 0 20px 20px;
+      border-top: 1px solid #334155;
+    }
+    .step.open .step-body { display: block; }
+
+    .step-desc {
+      font-size: 0.875rem;
+      color: #94a3b8;
+      padding: 14px 0 10px;
+    }
+
+    /* Code block */
+    .code-wrap { position: relative; margin: 10px 0; }
+    .code-label {
+      font-size: 0.68rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: #64748b;
+      margin-bottom: 4px;
+    }
+    .code-block {
+      background: #0f172a;
+      border: 1px solid #1e3a5f;
+      border-radius: 8px;
+      padding: 14px 16px;
+      font-family: 'Fira Code', 'Courier New', monospace;
+      font-size: 0.82rem;
+      overflow-x: auto;
+      line-height: 1.7;
+      color: #e2e8f0;
+      white-space: pre;
+    }
+    .code-block .comment { color: #4b6484; }
+    .code-block .kw      { color: #c084fc; }
+    .code-block .str     { color: #86efac; }
+    .code-block .flag    { color: #fbbf24; }
+    .code-block .url     { color: #38bdf8; }
+    .code-block .var     { color: #fb923c; }
+    .code-block .out     { color: #a3e635; }
+
+    .copy-btn {
+      position: absolute;
+      top: 8px; right: 8px;
+      background: #334155;
+      color: #94a3b8;
+      border: none;
+      border-radius: 5px;
+      padding: 4px 10px;
+      font-size: 0.7rem;
+      cursor: pointer;
+      transition: background 0.15s;
+    }
+    .copy-btn:hover { background: #475569; color: #e2e8f0; }
+    .copy-btn.copied { background: #065f46; color: #6ee7b7; }
+
+    /* Response box */
+    .response-box {
+      background: #0c1a12;
+      border: 1px solid #166534;
+      border-radius: 8px;
+      padding: 12px 16px;
+      margin-top: 10px;
+    }
+    .response-box.warn {
+      background: #1c0a07;
+      border-color: #7c2d12;
+    }
+    .response-box .rlabel {
+      font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.08em;
+      color: #4ade80; font-weight: 600; margin-bottom: 6px;
+    }
+    .response-box.warn .rlabel { color: #f87171; }
+    .response-box pre {
+      font-family: 'Fira Code', monospace;
+      font-size: 0.8rem;
+      color: #86efac;
+      white-space: pre-wrap;
+    }
+    .response-box.warn pre { color: #fca5a5; }
+
+    /* Full script section */
+    .full-script {
+      background: #1e293b;
+      border: 1px solid #334155;
+      border-radius: 12px;
+      overflow: hidden;
+      margin-top: 36px;
+    }
+    .full-script-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 16px 20px;
+      cursor: pointer;
+      user-select: none;
+    }
+    .full-script-header:hover { background: #243348; }
+    .full-script-header h2 { font-size: 0.95rem; font-weight: 600; color: #e2e8f0; }
+    .full-script-body {
+      display: none;
+      padding: 0 20px 20px;
+      border-top: 1px solid #334155;
+    }
+    .full-script.open .full-script-body { display: block; }
+    .full-script.open .chevron { transform: rotate(180deg); }
+
+    /* Divider label */
+    .section-label {
+      font-size: 0.72rem;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: #64748b;
+      margin: 36px 0 16px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .section-label::before,
+    .section-label::after {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: #1e3a5f;
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>API Test Script</h1>
+  <p>Keycloak + Spring Boot — All endpoints walkthrough</p>
+  <div class="meta">
+    <span>APP: http://13.210.141.214:80</span>
+    <span>KEYCLOAK: http://13.210.141.214:8180</span>
+    <span>REALM: master</span>
+    <span>CLIENT: spring-demo-client</span>
+  </div>
+</header>
+
+<main>
+
+  <!-- Config -->
+  <div class="config-card">
+    <h2>Script Variables</h2>
+    <div class="config-grid">
+      <div class="config-row">
+        <span class="config-label">KC_URL</span>
+        <span class="config-value">http://13.210.141.214:8180</span>
+      </div>
+      <div class="config-row">
+        <span class="config-label">APP_URL</span>
+        <span class="config-value">http://13.210.141.214:80</span>
+      </div>
+      <div class="config-row">
+        <span class="config-label">REALM</span>
+        <span class="config-value">master</span>
+      </div>
+      <div class="config-row">
+        <span class="config-label">CLIENT_ID</span>
+        <span class="config-value">spring-demo-client</span>
+      </div>
+      <div class="config-row">
+        <span class="config-label">CLIENT_SECRET</span>
+        <span class="config-value">super-secret-client-key</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="section-label">Test Steps</div>
+
+  <!-- Step 1 -->
+  <div class="step open" id="s1">
+    <div class="step-header" onclick="toggle('s1')">
+      <div class="step-num num-default">1</div>
+      <div class="step-title">Public endpoint — no token required</div>
+      <span class="badge badge-get">GET</span>
+      <span class="chevron">&#8964;</span>
+    </div>
+    <div class="step-body">
+      <p class="step-desc">Hits <code>/api/public/hello</code>. No Bearer token needed — verifies the app is reachable.</p>
+      <div class="code-label">Command</div>
+      <div class="code-wrap">
+        <button class="copy-btn" onclick="copyBlock(this)">Copy</button>
+        <div class="code-block"><span class="kw">curl</span> <span class="flag">-s</span> <span class="url">http://13.210.141.214:80/api/public/hello</span> | python3 <span class="flag">-m</span> json.tool</div>
+      </div>
+      <div class="response-box">
+        <div class="rlabel">Expected Response — 200 OK</div>
+        <pre>{
+  "message": "Hello from public endpoint!"
+}</pre>
+      </div>
+    </div>
+  </div>
+
+  <!-- Step 2 -->
+  <div class="step open" id="s2">
+    <div class="step-header" onclick="toggle('s2')">
+      <div class="step-num num-token">2</div>
+      <div class="step-title">Get USER token for <code>admin</code></div>
+      <span class="badge badge-token">TOKEN</span>
+      <span class="chevron">&#8964;</span>
+    </div>
+    <div class="step-body">
+      <p class="step-desc">Requests a JWT from Keycloak using the Password Grant. The token is stored in <code>$USER_TOKEN</code> for subsequent requests.</p>
+      <div class="code-label">get_token function call</div>
+      <div class="code-wrap">
+        <button class="copy-btn" onclick="copyBlock(this)">Copy</button>
+        <div class="code-block"><span class="var">USER_TOKEN</span>=$(
+  <span class="kw">curl</span> <span class="flag">-s -X POST</span> \
+    <span class="url">http://13.210.141.214:8180/realms/master/protocol/openid-connect/token</span> \
+    <span class="flag">-H</span> <span class="str">"Content-Type: application/x-www-form-urlencoded"</span> \
+    <span class="flag">-d</span> <span class="str">"client_id=spring-demo-client"</span> \
+    <span class="flag">-d</span> <span class="str">"client_secret=super-secret-client-key"</span> \
+    <span class="flag">-d</span> <span class="str">"username=admin"</span> \
+    <span class="flag">-d</span> <span class="str">"password=admin123"</span> \
+    <span class="flag">-d</span> <span class="str">"grant_type=password"</span> \
+  | python3 <span class="flag">-c</span> <span class="str">"import sys,json; d=json.load(sys.stdin); print(d.get('access_token','ERROR: '+d.get('error_description','unknown')))"</span>
+)</div>
+      </div>
+      <div class="response-box">
+        <div class="rlabel">Expected Output</div>
+        <pre>Token (first 60 chars): eyJhbGciOiJSUzI1NiIsInR5cCIgOiAiSldUIiwia2lkIiA6...</pre>
+      </div>
+    </div>
+  </div>
+
+  <!-- Step 3 -->
+  <div class="step open" id="s3">
+    <div class="step-header" onclick="toggle('s3')">
+      <div class="step-num num-user">3</div>
+      <div class="step-title">Access <code>/api/user/profile</code> with USER token</div>
+      <span class="badge badge-get">GET</span>
+      <span class="chevron">&#8964;</span>
+    </div>
+    <div class="step-body">
+      <p class="step-desc">Protected endpoint — requires <code>ROLE_USER</code>. Uses <code>$USER_TOKEN</code> from step 2.</p>
+      <div class="code-label">Command</div>
+      <div class="code-wrap">
+        <button class="copy-btn" onclick="copyBlock(this)">Copy</button>
+        <div class="code-block"><span class="kw">curl</span> <span class="flag">-s</span> <span class="url">http://13.210.141.214:80/api/user/profile</span> \
+  <span class="flag">-H</span> <span class="str">"Authorization: Bearer ${USER_TOKEN}"</span> \
+| python3 <span class="flag">-m</span> json.tool</div>
+      </div>
+      <div class="response-box">
+        <div class="rlabel">Expected Response — 200 OK</div>
+        <pre>{
+  "username": "admin",
+  "email": "admin@example.com",
+  "roles": ["ROLE_USER"]
+}</pre>
+      </div>
+    </div>
+  </div>
+
+  <!-- Step 4 -->
+  <div class="step open" id="s4">
+    <div class="step-header" onclick="toggle('s4')">
+      <div class="step-num num-admin">4</div>
+      <div class="step-title">Try <code>/api/admin/dashboard</code> with USER token — expect 403</div>
+      <span class="badge badge-403">403</span>
+      <span class="chevron">&#8964;</span>
+    </div>
+    <div class="step-body">
+      <p class="step-desc">Confirms that a user without <code>ROLE_ADMIN</code> is correctly denied. The <code>-w</code> flag prints the HTTP status code.</p>
+      <div class="code-label">Command</div>
+      <div class="code-wrap">
+        <button class="copy-btn" onclick="copyBlock(this)">Copy</button>
+        <div class="code-block"><span class="kw">curl</span> <span class="flag">-s -w</span> <span class="str">"\nHTTP Status: %{http_code}\n"</span> \
+  <span class="url">http://13.210.141.214:80/api/admin/dashboard</span> \
+  <span class="flag">-H</span> <span class="str">"Authorization: Bearer ${USER_TOKEN}"</span></div>
+      </div>
+      <div class="response-box warn">
+        <div class="rlabel">Expected Response — 403 Forbidden</div>
+        <pre>HTTP Status: 403</pre>
+      </div>
+    </div>
+  </div>
+
+  <!-- Step 5 -->
+  <div class="step open" id="s5">
+    <div class="step-header" onclick="toggle('s5')">
+      <div class="step-num num-token">5</div>
+      <div class="step-title">Get ADMIN token for <code>admin</code></div>
+      <span class="badge badge-token">TOKEN</span>
+      <span class="chevron">&#8964;</span>
+    </div>
+    <div class="step-body">
+      <p class="step-desc">Same admin user from master realm. Token stored in <code>$ADMIN_TOKEN</code>.</p>
+      <div class="code-label">get_token function call</div>
+      <div class="code-wrap">
+        <button class="copy-btn" onclick="copyBlock(this)">Copy</button>
+        <div class="code-block"><span class="var">ADMIN_TOKEN</span>=$(
+  <span class="kw">curl</span> <span class="flag">-s -X POST</span> \
+    <span class="url">http://13.210.141.214:8180/realms/master/protocol/openid-connect/token</span> \
+    <span class="flag">-H</span> <span class="str">"Content-Type: application/x-www-form-urlencoded"</span> \
+    <span class="flag">-d</span> <span class="str">"client_id=spring-demo-client"</span> \
+    <span class="flag">-d</span> <span class="str">"client_secret=super-secret-client-key"</span> \
+    <span class="flag">-d</span> <span class="str">"username=admin"</span> \
+    <span class="flag">-d</span> <span class="str">"password=admin123"</span> \
+    <span class="flag">-d</span> <span class="str">"grant_type=password"</span> \
+  | python3 <span class="flag">-c</span> <span class="str">"import sys,json; d=json.load(sys.stdin); print(d.get('access_token','ERROR: '+d.get('error_description','unknown')))"</span>
+)</div>
+      </div>
+      <div class="response-box">
+        <div class="rlabel">Expected Output</div>
+        <pre>Token (first 60 chars): eyJhbGciOiJSUzI1NiIsInR5cCIgOiAiSldUIiwia2lkIiA6...</pre>
+      </div>
+    </div>
+  </div>
+
+  <!-- Step 6 -->
+  <div class="step open" id="s6">
+    <div class="step-header" onclick="toggle('s6')">
+      <div class="step-num num-admin">6</div>
+      <div class="step-title">Access <code>/api/admin/dashboard</code> with ADMIN token</div>
+      <span class="badge badge-get">GET</span>
+      <span class="chevron">&#8964;</span>
+    </div>
+    <div class="step-body">
+      <p class="step-desc">Same endpoint as step 4, now with an admin token — should return 200.</p>
+      <div class="code-label">Command</div>
+      <div class="code-wrap">
+        <button class="copy-btn" onclick="copyBlock(this)">Copy</button>
+        <div class="code-block"><span class="kw">curl</span> <span class="flag">-s</span> <span class="url">http://13.210.141.214:80/api/admin/dashboard</span> \
+  <span class="flag">-H</span> <span class="str">"Authorization: Bearer ${ADMIN_TOKEN}"</span> \
+| python3 <span class="flag">-m</span> json.tool</div>
+      </div>
+      <div class="response-box">
+        <div class="rlabel">Expected Response — 200 OK</div>
+        <pre>{
+  "message": "Welcome to the admin dashboard",
+  "username": "admin"
+}</pre>
+      </div>
+    </div>
+  </div>
+
+  <!-- Step 7 -->
+  <div class="step open" id="s7">
+    <div class="step-header" onclick="toggle('s7')">
+      <div class="step-num num-admin">7</div>
+      <div class="step-title">View all JWT claims</div>
+      <span class="badge badge-get">GET</span>
+      <span class="chevron">&#8964;</span>
+    </div>
+    <div class="step-body">
+      <p class="step-desc">Returns every claim decoded from the ADMIN JWT — useful for inspecting roles, subject, expiry, and Keycloak-specific fields.</p>
+      <div class="code-label">Command</div>
+      <div class="code-wrap">
+        <button class="copy-btn" onclick="copyBlock(this)">Copy</button>
+        <div class="code-block"><span class="kw">curl</span> <span class="flag">-s</span> <span class="url">http://13.210.141.214:80/api/admin/jwt-claims</span> \
+  <span class="flag">-H</span> <span class="str">"Authorization: Bearer ${ADMIN_TOKEN}"</span> \
+| python3 <span class="flag">-m</span> json.tool</div>
+      </div>
+      <div class="response-box">
+        <div class="rlabel">Expected Response — 200 OK</div>
+        <pre>{
+  "sub": "a1b2c3d4-...",
+  "preferred_username": "admin",
+  "email": "admin@example.com",
+  "realm_access": { "roles": ["ROLE_ADMIN", "ROLE_USER"] },
+  "exp": 1717000000,
+  ...
+}</pre>
+      </div>
+    </div>
+  </div>
+
+  <!-- Full script -->
+  <div class="section-label">Full Script</div>
+
+  <div class="full-script open" id="fullscript">
+    <div class="full-script-header" onclick="toggle('fullscript')">
+      <h2>test-api.sh — complete script with port 80</h2>
+      <span class="chevron">&#8964;</span>
+    </div>
+    <div class="full-script-body">
+      <div style="margin-top:16px;">
+        <div class="code-wrap">
+          <button class="copy-btn" onclick="copyBlock(this)">Copy all</button>
+          <div class="code-block"><span class="comment">#!/usr/bin/env bash
+# =============================================================
+# Test all API endpoints after setup
+# Usage: ./test-api.sh &lt;EC2_PUBLIC_IP&gt;
+# =============================================================</span>
+
+<span class="var">KC_IP</span>=<span class="str">"${1:-localhost}"</span>
+<span class="var">KC_URL</span>=<span class="str">"http://${KC_IP}:8180"</span>
+<span class="var">APP_URL</span>=<span class="str">"http://${KC_IP}:80"</span>
+<span class="var">REALM</span>=<span class="str">"master"</span>
+<span class="var">CLIENT_ID</span>=<span class="str">"spring-demo-client"</span>
+<span class="var">CLIENT_SECRET</span>=<span class="str">"super-secret-client-key"</span>
+
+<span class="kw">get_token</span>() {
+  <span class="kw">local</span> <span class="var">USERNAME</span>=$1
+  <span class="kw">local</span> <span class="var">PASSWORD</span>=$2
+  <span class="kw">curl</span> <span class="flag">-s -X POST</span> <span class="str">"${KC_URL}/realms/${REALM}/protocol/openid-connect/token"</span> \
+    <span class="flag">-H</span> <span class="str">"Content-Type: application/x-www-form-urlencoded"</span> \
+    <span class="flag">-d</span> <span class="str">"client_id=${CLIENT_ID}"</span> \
+    <span class="flag">-d</span> <span class="str">"client_secret=${CLIENT_SECRET}"</span> \
+    <span class="flag">-d</span> <span class="str">"username=${USERNAME}"</span> \
+    <span class="flag">-d</span> <span class="str">"password=${PASSWORD}"</span> \
+    <span class="flag">-d</span> <span class="str">"grant_type=password"</span> \
+    | python3 <span class="flag">-c</span> <span class="str">"import sys,json; d=json.load(sys.stdin); print(d.get('access_token','ERROR: '+d.get('error_description','unknown')))"</span>
+}
+
+<span class="out">echo "======================================================"
+echo " 1. Public endpoint (no token)"
+echo "======================================================"</span>
+<span class="kw">curl</span> <span class="flag">-s</span> <span class="str">"${APP_URL}/api/public/hello"</span> | python3 <span class="flag">-m</span> json.tool
+
+<span class="out">echo ""
+echo "======================================================"
+echo " 2. Get USER token for admin"
+echo "======================================================"</span>
+<span class="var">USER_TOKEN</span>=$(get_token <span class="str">"admin"</span> <span class="str">"admin123"</span>)
+<span class="out">echo "Token (first 60 chars): ${USER_TOKEN:0:60}..."</span>
+
+<span class="out">echo ""
+echo "======================================================"
+echo " 3. Access /api/user/profile with USER token"
+echo "======================================================"</span>
+<span class="kw">curl</span> <span class="flag">-s</span> <span class="str">"${APP_URL}/api/user/profile"</span> \
+  <span class="flag">-H</span> <span class="str">"Authorization: Bearer ${USER_TOKEN}"</span> | python3 <span class="flag">-m</span> json.tool
+
+<span class="out">echo ""
+echo "======================================================"
+echo " 4. Try /api/admin/dashboard with USER token (should 403)"
+echo "======================================================"</span>
+<span class="kw">curl</span> <span class="flag">-s -w</span> <span class="str">"\nHTTP Status: %{http_code}\n"</span> \
+  <span class="str">"${APP_URL}/api/admin/dashboard"</span> \
+  <span class="flag">-H</span> <span class="str">"Authorization: Bearer ${USER_TOKEN}"</span>
+
+<span class="out">echo ""
+echo "======================================================"
+echo " 5. Get ADMIN token for admin"
+echo "======================================================"</span>
+<span class="var">ADMIN_TOKEN</span>=$(get_token <span class="str">"admin"</span> <span class="str">"admin123"</span>)
+<span class="out">echo "Token (first 60 chars): ${ADMIN_TOKEN:0:60}..."</span>
+
+<span class="out">echo ""
+echo "======================================================"
+echo " 6. Access /api/admin/dashboard with ADMIN token"
+echo "======================================================"</span>
+<span class="kw">curl</span> <span class="flag">-s</span> <span class="str">"${APP_URL}/api/admin/dashboard"</span> \
+  <span class="flag">-H</span> <span class="str">"Authorization: Bearer ${ADMIN_TOKEN}"</span> | python3 <span class="flag">-m</span> json.tool
+
+<span class="out">echo ""
+echo "======================================================"
+echo " 7. View all JWT claims"
+echo "======================================================"</span>
+<span class="kw">curl</span> <span class="flag">-s</span> <span class="str">"${APP_URL}/api/admin/jwt-claims"</span> \
+  <span class="flag">-H</span> <span class="str">"Authorization: Bearer ${ADMIN_TOKEN}"</span> | python3 <span class="flag">-m</span> json.tool</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Quick ref table -->
+  <div class="section-label">Quick Reference</div>
+
+  <table style="width:100%; border-collapse:collapse; background:#1e293b; border-radius:12px; overflow:hidden; border: 1px solid #334155;">
+    <thead>
+      <tr style="background:#0f172a;">
+        <th style="padding:10px 16px; text-align:left; font-size:0.78rem; text-transform:uppercase; letter-spacing:0.06em; color:#64748b;">#</th>
+        <th style="padding:10px 16px; text-align:left; font-size:0.78rem; text-transform:uppercase; letter-spacing:0.06em; color:#64748b;">Method</th>
+        <th style="padding:10px 16px; text-align:left; font-size:0.78rem; text-transform:uppercase; letter-spacing:0.06em; color:#64748b;">Endpoint</th>
+        <th style="padding:10px 16px; text-align:left; font-size:0.78rem; text-transform:uppercase; letter-spacing:0.06em; color:#64748b;">Auth</th>
+        <th style="padding:10px 16px; text-align:left; font-size:0.78rem; text-transform:uppercase; letter-spacing:0.06em; color:#64748b;">Expected</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr style="border-top:1px solid #334155;">
+        <td style="padding:10px 16px; font-size:0.85rem; color:#64748b;">1</td>
+        <td style="padding:10px 16px;"><span class="badge badge-get">GET</span></td>
+        <td style="padding:10px 16px; font-family:monospace; font-size:0.82rem; color:#38bdf8;">/api/public/hello</td>
+        <td style="padding:10px 16px; font-size:0.82rem; color:#94a3b8;">None</td>
+        <td style="padding:10px 16px; font-size:0.82rem; color:#4ade80;">200 OK</td>
+      </tr>
+      <tr style="border-top:1px solid #334155;">
+        <td style="padding:10px 16px; font-size:0.85rem; color:#64748b;">2</td>
+        <td style="padding:10px 16px;"><span class="badge badge-post">POST</span></td>
+        <td style="padding:10px 16px; font-family:monospace; font-size:0.82rem; color:#38bdf8;">:8180/…/token</td>
+        <td style="padding:10px 16px; font-size:0.82rem; color:#94a3b8;">client_secret</td>
+        <td style="padding:10px 16px; font-size:0.82rem; color:#fcd34d;">JWT token</td>
+      </tr>
+      <tr style="border-top:1px solid #334155;">
+        <td style="padding:10px 16px; font-size:0.85rem; color:#64748b;">3</td>
+        <td style="padding:10px 16px;"><span class="badge badge-get">GET</span></td>
+        <td style="padding:10px 16px; font-family:monospace; font-size:0.82rem; color:#38bdf8;">/api/user/profile</td>
+        <td style="padding:10px 16px; font-size:0.82rem; color:#94a3b8;">USER token</td>
+        <td style="padding:10px 16px; font-size:0.82rem; color:#4ade80;">200 OK</td>
+      </tr>
+      <tr style="border-top:1px solid #334155;">
+        <td style="padding:10px 16px; font-size:0.85rem; color:#64748b;">4</td>
+        <td style="padding:10px 16px;"><span class="badge badge-get">GET</span></td>
+        <td style="padding:10px 16px; font-family:monospace; font-size:0.82rem; color:#38bdf8;">/api/admin/dashboard</td>
+        <td style="padding:10px 16px; font-size:0.82rem; color:#94a3b8;">USER token</td>
+        <td style="padding:10px 16px; font-size:0.82rem; color:#f87171;">403 Forbidden</td>
+      </tr>
+      <tr style="border-top:1px solid #334155;">
+        <td style="padding:10px 16px; font-size:0.85rem; color:#64748b;">5</td>
+        <td style="padding:10px 16px;"><span class="badge badge-post">POST</span></td>
+        <td style="padding:10px 16px; font-family:monospace; font-size:0.82rem; color:#38bdf8;">:8180/…/token</td>
+        <td style="padding:10px 16px; font-size:0.82rem; color:#94a3b8;">client_secret</td>
+        <td style="padding:10px 16px; font-size:0.82rem; color:#fcd34d;">JWT token</td>
+      </tr>
+      <tr style="border-top:1px solid #334155;">
+        <td style="padding:10px 16px; font-size:0.85rem; color:#64748b;">6</td>
+        <td style="padding:10px 16px;"><span class="badge badge-get">GET</span></td>
+        <td style="padding:10px 16px; font-family:monospace; font-size:0.82rem; color:#38bdf8;">/api/admin/dashboard</td>
+        <td style="padding:10px 16px; font-size:0.82rem; color:#94a3b8;">ADMIN token</td>
+        <td style="padding:10px 16px; font-size:0.82rem; color:#4ade80;">200 OK</td>
+      </tr>
+      <tr style="border-top:1px solid #334155;">
+        <td style="padding:10px 16px; font-size:0.85rem; color:#64748b;">7</td>
+        <td style="padding:10px 16px;"><span class="badge badge-get">GET</span></td>
+        <td style="padding:10px 16px; font-family:monospace; font-size:0.82rem; color:#38bdf8;">/api/admin/jwt-claims</td>
+        <td style="padding:10px 16px; font-size:0.82rem; color:#94a3b8;">ADMIN token</td>
+        <td style="padding:10px 16px; font-size:0.82rem; color:#4ade80;">200 OK</td>
+      </tr>
+    </tbody>
+  </table>
+
+</main>
+
+<script>
+  function toggle(id) {
+    document.getElementById(id).classList.toggle('open');
+  }
+
+  function copyBlock(btn) {
+    const block = btn.closest('.code-wrap, .full-script-body');
+    const codeEl = block.querySelector('.code-block');
+    const text = codeEl.innerText.replace(/^Copy.*\n?/, '').trim();
+    navigator.clipboard.writeText(text).then(() => {
+      btn.textContent = 'Copied!';
+      btn.classList.add('copied');
+      setTimeout(() => { btn.textContent = 'Copy'; btn.classList.remove('copied'); }, 2000);
+    });
+  }
+</script>
+
+</body>
+</html>

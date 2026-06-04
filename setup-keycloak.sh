@@ -10,7 +10,7 @@ KC_IP="${1:-localhost}"
 KC_URL="http://${KC_IP}:8180"
 ADMIN_USER="admin"
 ADMIN_PASS="admin123"
-REALM="demo-realm"
+REALM="master"
 CLIENT_ID="spring-demo-client"
 CLIENT_SECRET="super-secret-client-key"
 
@@ -33,7 +33,14 @@ ADMIN_TOKEN=$(curl -s -X POST "${KC_URL}/realms/master/protocol/openid-connect/t
 
 AUTH_HEADER="Authorization: Bearer ${ADMIN_TOKEN}"
 
-# 2. Create realm
+# 2. Disable SSL requirement on master realm (needed for HTTP access from external IPs)
+echo ">>> Setting sslRequired=NONE on master realm..."
+curl -s -X PUT "${KC_URL}/admin/realms/master" \
+  -H "${AUTH_HEADER}" \
+  -H "Content-Type: application/json" \
+  -d '{"sslRequired": "NONE"}' || echo "(could not update master realm SSL setting)"
+
+# 3. Create realm
 echo ">>> Creating realm: ${REALM}"
 curl -s -X POST "${KC_URL}/admin/realms" \
   -H "${AUTH_HEADER}" \
@@ -46,7 +53,7 @@ curl -s -X POST "${KC_URL}/admin/realms" \
     \"loginWithEmailAllowed\": true
   }" || echo "(realm may already exist)"
 
-# 3. Create realm roles
+# 4. Create realm roles
 for ROLE in USER ADMIN; do
   echo ">>> Creating realm role: ${ROLE}"
   curl -s -X POST "${KC_URL}/admin/realms/${REALM}/roles" \
@@ -55,7 +62,7 @@ for ROLE in USER ADMIN; do
     -d "{\"name\": \"${ROLE}\"}" || echo "(role may exist)"
 done
 
-# 4. Create client
+# 5. Create client
 echo ">>> Creating client: ${CLIENT_ID}"
 curl -s -X POST "${KC_URL}/admin/realms/${REALM}/clients" \
   -H "${AUTH_HEADER}" \
@@ -72,7 +79,7 @@ curl -s -X POST "${KC_URL}/admin/realms/${REALM}/clients" \
     \"webOrigins\": [\"*\"]
   }" || echo "(client may exist)"
 
-# 5. Create test users
+# 6. Create test users
 create_user() {
   local USERNAME=$1
   local PASSWORD=$2

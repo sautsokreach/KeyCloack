@@ -1,5 +1,6 @@
 package com.demo.keycloak.controller;
 
+import com.demo.keycloak.messaging.KafkaMessageConsumer;
 import com.demo.keycloak.messaging.KafkaMessagePublisher;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
@@ -16,6 +17,7 @@ import java.util.Map;
 public class KafkaController {
 
     private final KafkaMessagePublisher publisher;
+    private final KafkaMessageConsumer consumer;
 
     @Value("${kafka.topics.user-events}")
     private String topic;
@@ -82,6 +84,32 @@ public class KafkaController {
 
         publisher.publishToPartition(username, action, partition);
         return Map.of("status", "sent", "partition", String.valueOf(partition), "key", username);
+    }
+
+    /**
+     * GET /api/kafka/messages
+     * Returns the last 100 messages received by the consumer.
+     */
+    @GetMapping("/messages")
+    public Map<String, Object> getMessages() {
+        List<Map<String, Object>> messages = consumer.getReceivedMessages();
+        return Map.of(
+                "count", messages.size(),
+                "messages", messages
+        );
+    }
+
+    /**
+     * GET /api/kafka/messages/dlt
+     * Returns messages that failed all retries and landed in the Dead Letter Topic.
+     */
+    @GetMapping("/messages/dlt")
+    public Map<String, Object> getDltMessages() {
+        List<Map<String, Object>> messages = consumer.getDeadLetterMessages();
+        return Map.of(
+                "count", messages.size(),
+                "messages", messages
+        );
     }
 
     /**

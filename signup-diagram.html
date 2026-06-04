@@ -384,7 +384,7 @@
         <div class="step-content">
           <div class="step-actor">Browser</div>
           <div class="step-text">Visits your app or Keycloak login page</div>
-          <div class="step-code">GET http://52.65.212.193:8080
+          <div class="step-code">GET http://13.210.141.214:8080
 <span class="code-comment">→ Spring redirects to Keycloak login page</span></div>
         </div>
       </div>
@@ -487,7 +487,7 @@ Authorization: Bearer eyJhbG...
   <h3>🔧 How to enable self-registration in Keycloak</h3>
   <div class="guide-step">
     <div class="guide-num">1</div>
-    <div class="guide-text">Open Keycloak Admin UI at <strong>http://52.65.212.193:8180</strong></div>
+    <div class="guide-text">Open Keycloak Admin UI at <strong>http://13.210.141.214:8180</strong></div>
   </div>
   <div class="guide-step">
     <div class="guide-num">2</div>
@@ -572,7 +572,7 @@ Content-Type: application/json
           <div class="step-actor">Spring Boot → Keycloak Admin API</div>
           <div class="step-text">Creates user via Keycloak Admin REST API</div>
           <div class="step-sub">Spring Boot must first get an admin token, then call the users API</div>
-          <div class="step-code">POST :8180/admin/realms/demo-realm/users
+          <div class="step-code">POST :8180/admin/realms/master/users
 Authorization: Bearer &lt;admin-token&gt;
 
 {
@@ -596,7 +596,7 @@ Authorization: Bearer &lt;admin-token&gt;
         <div class="step-content">
           <div class="step-actor">Spring Boot → Keycloak Admin API</div>
           <div class="step-text">Assigns USER role to the new user</div>
-          <div class="step-code">POST :8180/admin/realms/demo-realm
+          <div class="step-code">POST :8180/admin/realms/master
        /users/{userId}/role-mappings/realm
 
 [{ <span class="code-key">"name"</span>: <span class="code-str">"USER"</span> }]
@@ -626,7 +626,7 @@ Authorization: Bearer &lt;admin-token&gt;
         <div class="step-content">
           <div class="step-actor">Frontend → Keycloak</div>
           <div class="step-text">Auto-login: fetch JWT token</div>
-          <div class="step-code">POST :8180/realms/demo-realm
+          <div class="step-code">POST :8180/realms/master
      /protocol/openid-connect/token
 
 grant_type=password

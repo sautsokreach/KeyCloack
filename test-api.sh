@@ -7,7 +7,7 @@
 KC_IP="${1:-localhost}"
 KC_URL="http://${KC_IP}:8180"
 APP_URL="http://${KC_IP}:8080"
-REALM="demo-realm"
+REALM="master"
 CLIENT_ID="spring-demo-client"
 CLIENT_SECRET="super-secret-client-key"
 
