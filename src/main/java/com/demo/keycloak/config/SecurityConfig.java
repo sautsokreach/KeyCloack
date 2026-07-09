@@ -16,6 +16,13 @@ import org.springframework.security.web.SecurityFilterChain;
 @EnableMethodSecurity
 public class SecurityConfig {
 
+    // Public (browser-reachable) base URLs. Overridable via env for container/host/prod.
+    @org.springframework.beans.factory.annotation.Value("${KC_EXTERNAL_URL:http://13.228.73.108:8180}")
+    private String keycloakExternalUrl;
+
+    @org.springframework.beans.factory.annotation.Value("${APP_EXTERNAL_URL:http://13.228.73.108:8080}")
+    private String appExternalUrl;
+
     // Chain 1: stateless JWT for all /api/** endpoints
     @Bean
     @Order(1)
@@ -51,8 +58,8 @@ public class SecurityConfig {
             )
             .logout(logout -> logout
                 // After logout, send user back to Keycloak login page
-                .logoutSuccessUrl("http://13.210.141.214:8180/realms/master/protocol/openid-connect/logout"
-                    + "?redirect_uri=http://13.210.141.214:8080/oauth2/authorization/keycloak")
+                .logoutSuccessUrl(keycloakExternalUrl + "/realms/master/protocol/openid-connect/logout"
+                    + "?redirect_uri=" + appExternalUrl + "/oauth2/authorization/keycloak")
                 .invalidateHttpSession(true)
                 .clearAuthentication(true)
             );

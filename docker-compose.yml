@@ -12,6 +12,9 @@ services:
       KC_HOSTNAME_STRICT: "false"
       KC_HOSTNAME_STRICT_HTTPS: "false"
       KC_HTTP_ENABLED: "true"
+      # Advertise the public URL so tokens' iss claim + browser redirects use the public IP
+      KC_HOSTNAME_URL: http://13.228.73.108:8180
+      KC_HOSTNAME_ADMIN_URL: http://13.228.73.108:8180
     ports:
       - "8180:8180"
     volumes:
@@ -63,6 +66,28 @@ services:
       KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka:29092
     depends_on:
       - kafka
+    restart: unless-stopped
+
+  # Spring Boot app — runs on the same network so it reaches Keycloak via http://keycloak:8180
+  app:
+    build: .                            # builds the image from ./Dockerfile
+    image: keycloak-spring-demo:1.0.0
+    container_name: keycloak-spring-demo
+    depends_on:
+      - keycloak
+      - rabbitmq
+      - kafka
+    ports:
+      - "8080:8080"
+    environment:
+      # Backend → Keycloak, internal (works from inside the Docker network)
+      KC_INTERNAL_URL: http://keycloak:8180
+      # Browser-facing (public IP) — used for iss validation + login/logout redirects
+      KC_EXTERNAL_URL: http://13.228.73.108:8180
+      APP_EXTERNAL_URL: http://13.228.73.108:8080
+      # Messaging brokers are also on this network → use service names, not localhost
+      SPRING_RABBITMQ_HOST: rabbitmq
+      SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:29092
     restart: unless-stopped
 
 volumes:

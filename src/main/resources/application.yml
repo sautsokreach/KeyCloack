@@ -30,10 +30,17 @@ spring:
 
   security:
     oauth2:
+      # KC_INTERNAL_URL : base URL the app (backend) uses to reach Keycloak.
+      #                   In Docker: http://keycloak:8180 (service name on the shared network).
+      #                   On host  : override to http://localhost:8180
+      # KC_EXTERNAL_URL : base URL the browser uses (public IP). Used for the login/logout
+      #                   redirects and to validate the "iss" claim in tokens.
       resourceserver:
         jwt:
-          issuer-uri: http://13.210.141.214:8180/realms/master
-          jwk-set-uri: http://13.210.141.214:8180/realms/master/protocol/openid-connect/certs
+          # iss claim is minted by Keycloak using its advertised (external) hostname
+          issuer-uri: ${KC_EXTERNAL_URL:http://13.228.73.108:8180}/realms/master
+          # keys are fetched by the backend → must be internally reachable (no discovery, no startup crash)
+          jwk-set-uri: ${KC_INTERNAL_URL:http://keycloak:8180}/realms/master/protocol/openid-connect/certs
 
       client:
         registration:
@@ -42,16 +49,23 @@ spring:
             client-secret: super-secret-client-key
             scope: openid, profile, email, roles
             authorization-grant-type: authorization_code
-            redirect-uri: "http://13.210.141.214:8080/login/oauth2/code/keycloak"
+            # APP_EXTERNAL_URL : the app's own public base URL the browser is redirected back to
+            redirect-uri: "${APP_EXTERNAL_URL:http://13.228.73.108:8080}/login/oauth2/code/keycloak"
         provider:
           keycloak:
-            issuer-uri: http://13.210.141.214:8180/realms/master
+            # NOTE: no issuer-uri here on purpose — it triggers eager OIDC discovery at startup,
+            # which fails when the public IP is unreachable from inside the container.
+            # Endpoints are declared explicitly instead, split by audience:
+            authorization-uri: ${KC_EXTERNAL_URL:http://13.228.73.108:8180}/realms/master/protocol/openid-connect/auth   # browser
+            token-uri:         ${KC_INTERNAL_URL:http://keycloak:8180}/realms/master/protocol/openid-connect/token         # backend
+            jwk-set-uri:       ${KC_INTERNAL_URL:http://keycloak:8180}/realms/master/protocol/openid-connect/certs          # backend
+            user-info-uri:     ${KC_INTERNAL_URL:http://keycloak:8180}/realms/master/protocol/openid-connect/userinfo       # backend
             user-name-attribute: preferred_username
 
 app:
   keycloak:
     realm: master
-    server-url: http://13.210.141.214:8180
+    server-url: http://13.228.73.108:8180
     client-id: spring-demo-client
 
   rabbitmq:

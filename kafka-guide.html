@@ -557,7 +557,7 @@ docker logs kafka --tail 5</div>
       <div class="step-action">Fetch a JWT from Keycloak (password grant)</div>
       <div class="step-desc">All Kafka endpoints require a valid JWT. Store the token in <code>$TOKEN</code> so the next steps can reuse it.</div>
       <div class="step-snippet"><button class="copy-btn" onclick="copySnippet(this)">copy</button>TOKEN=$(curl -s -X POST \
-  http://13.210.141.214:8180/realms/master/protocol/openid-connect/token \
+  http://13.228.73.108:8180/realms/master/protocol/openid-connect/token \
   -d "grant_type=password" \
   -d "client_id=spring-demo-client" \
   -d "client_secret=super-secret-client-key" \

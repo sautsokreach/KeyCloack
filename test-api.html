@@ -260,8 +260,8 @@
   <h1>API Test Script</h1>
   <p>Keycloak + Spring Boot — All endpoints walkthrough</p>
   <div class="meta">
-    <span>APP: http://13.210.141.214:80</span>
-    <span>KEYCLOAK: http://13.210.141.214:8180</span>
+    <span>APP: http://13.228.73.108:80</span>
+    <span>KEYCLOAK: http://13.228.73.108:8180</span>
     <span>REALM: master</span>
     <span>CLIENT: spring-demo-client</span>
   </div>
@@ -275,11 +275,11 @@
     <div class="config-grid">
       <div class="config-row">
         <span class="config-label">KC_URL</span>
-        <span class="config-value">http://13.210.141.214:8180</span>
+        <span class="config-value">http://13.228.73.108:8180</span>
       </div>
       <div class="config-row">
         <span class="config-label">APP_URL</span>
-        <span class="config-value">http://13.210.141.214:80</span>
+        <span class="config-value">http://13.228.73.108:80</span>
       </div>
       <div class="config-row">
         <span class="config-label">REALM</span>
@@ -311,7 +311,7 @@
       <div class="code-label">Command</div>
       <div class="code-wrap">
         <button class="copy-btn" onclick="copyBlock(this)">Copy</button>
-        <div class="code-block"><span class="kw">curl</span> <span class="flag">-s</span> <span class="url">http://13.210.141.214:80/api/public/hello</span> | python3 <span class="flag">-m</span> json.tool</div>
+        <div class="code-block"><span class="kw">curl</span> <span class="flag">-s</span> <span class="url">http://13.228.73.108:80/api/public/hello</span> | python3 <span class="flag">-m</span> json.tool</div>
       </div>
       <div class="response-box">
         <div class="rlabel">Expected Response — 200 OK</div>
@@ -337,7 +337,7 @@
         <button class="copy-btn" onclick="copyBlock(this)">Copy</button>
         <div class="code-block"><span class="var">USER_TOKEN</span>=$(
   <span class="kw">curl</span> <span class="flag">-s -X POST</span> \
-    <span class="url">http://13.210.141.214:8180/realms/master/protocol/openid-connect/token</span> \
+    <span class="url">http://13.228.73.108:8180/realms/master/protocol/openid-connect/token</span> \
     <span class="flag">-H</span> <span class="str">"Content-Type: application/x-www-form-urlencoded"</span> \
     <span class="flag">-d</span> <span class="str">"client_id=spring-demo-client"</span> \
     <span class="flag">-d</span> <span class="str">"client_secret=super-secret-client-key"</span> \
@@ -367,7 +367,7 @@
       <div class="code-label">Command</div>
       <div class="code-wrap">
         <button class="copy-btn" onclick="copyBlock(this)">Copy</button>
-        <div class="code-block"><span class="kw">curl</span> <span class="flag">-s</span> <span class="url">http://13.210.141.214:80/api/user/profile</span> \
+        <div class="code-block"><span class="kw">curl</span> <span class="flag">-s</span> <span class="url">http://13.228.73.108:80/api/user/profile</span> \
   <span class="flag">-H</span> <span class="str">"Authorization: Bearer ${USER_TOKEN}"</span> \
 | python3 <span class="flag">-m</span> json.tool</div>
       </div>
@@ -396,7 +396,7 @@
       <div class="code-wrap">
         <button class="copy-btn" onclick="copyBlock(this)">Copy</button>
         <div class="code-block"><span class="kw">curl</span> <span class="flag">-s -w</span> <span class="str">"\nHTTP Status: %{http_code}\n"</span> \
-  <span class="url">http://13.210.141.214:80/api/admin/dashboard</span> \
+  <span class="url">http://13.228.73.108:80/api/admin/dashboard</span> \
   <span class="flag">-H</span> <span class="str">"Authorization: Bearer ${USER_TOKEN}"</span></div>
       </div>
       <div class="response-box warn">
@@ -421,7 +421,7 @@
         <button class="copy-btn" onclick="copyBlock(this)">Copy</button>
         <div class="code-block"><span class="var">ADMIN_TOKEN</span>=$(
   <span class="kw">curl</span> <span class="flag">-s -X POST</span> \
-    <span class="url">http://13.210.141.214:8180/realms/master/protocol/openid-connect/token</span> \
+    <span class="url">http://13.228.73.108:8180/realms/master/protocol/openid-connect/token</span> \
     <span class="flag">-H</span> <span class="str">"Content-Type: application/x-www-form-urlencoded"</span> \
     <span class="flag">-d</span> <span class="str">"client_id=spring-demo-client"</span> \
     <span class="flag">-d</span> <span class="str">"client_secret=super-secret-client-key"</span> \
@@ -451,7 +451,7 @@
       <div class="code-label">Command</div>
       <div class="code-wrap">
         <button class="copy-btn" onclick="copyBlock(this)">Copy</button>
-        <div class="code-block"><span class="kw">curl</span> <span class="flag">-s</span> <span class="url">http://13.210.141.214:80/api/admin/dashboard</span> \
+        <div class="code-block"><span class="kw">curl</span> <span class="flag">-s</span> <span class="url">http://13.228.73.108:80/api/admin/dashboard</span> \
   <span class="flag">-H</span> <span class="str">"Authorization: Bearer ${ADMIN_TOKEN}"</span> \
 | python3 <span class="flag">-m</span> json.tool</div>
       </div>
@@ -478,7 +478,7 @@
       <div class="code-label">Command</div>
       <div class="code-wrap">
         <button class="copy-btn" onclick="copyBlock(this)">Copy</button>
-        <div class="code-block"><span class="kw">curl</span> <span class="flag">-s</span> <span class="url">http://13.210.141.214:80/api/admin/jwt-claims</span> \
+        <div class="code-block"><span class="kw">curl</span> <span class="flag">-s</span> <span class="url">http://13.228.73.108:80/api/admin/jwt-claims</span> \
   <span class="flag">-H</span> <span class="str">"Authorization: Bearer ${ADMIN_TOKEN}"</span> \
 | python3 <span class="flag">-m</span> json.tool</div>
       </div>
